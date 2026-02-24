@@ -45,6 +45,7 @@ body {
 .node {
   display: flex;
   align-items: baseline;
+  position: relative;
 }
 
 .node.clickable {
@@ -124,6 +125,21 @@ body {
 
 .node-label.folder a:hover {
   color: #b4befe;
+}
+
+/* ── Hover URL hint ───────────────────────────── */
+
+.node-url {
+  display: none;
+  position: absolute;
+  left: var(--url-left);
+  color: #585b70;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.node:hover > .node-url {
+  display: inline;
 }
 
 /* ── Children container ────────────────────────── */

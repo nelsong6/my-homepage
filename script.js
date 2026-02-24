@@ -1,4 +1,26 @@
-document.getElementById("tree").appendChild(renderList(bookmarks, ""));
+// Calculate the max visual width of all tree rows (in ch units) so
+// hover-revealed URLs can be aligned in a single consistent column.
+function calcMaxRowWidth(items, prefix) {
+  let max = 0;
+  items.forEach((item, i) => {
+    const isLast = i === items.length - 1;
+    const connector = isLast ? "└── " : "├── ";
+    const childPrefix = prefix + (isLast ? "    " : "│   ");
+    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+    // prefix+connector chars + toggle/spacer (1ch + 0.6ch gap) + name + arrow if link
+    const width = (prefix + connector).length + 1.6 + item.name.length + (item.url ? 1.15 : 0);
+    if (width > max) max = width;
+    if (hasChildren) {
+      const childMax = calcMaxRowWidth(item.children, childPrefix);
+      if (childMax > max) max = childMax;
+    }
+  });
+  return max;
+}
+
+const tree = document.getElementById("tree");
+tree.style.setProperty("--url-left", (Math.ceil(calcMaxRowWidth(bookmarks, "")) + 2) + "ch");
+tree.appendChild(renderList(bookmarks, ""));
 
 document.getElementById("expand-all").addEventListener("click", () => {
   document.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
@@ -69,6 +91,14 @@ function renderList(items, prefix) {
       label.textContent = item.name;
     }
     row.appendChild(label);
+
+    // URL hint shown on hover
+    if (item.url) {
+      const urlSpan = document.createElement("span");
+      urlSpan.className = "node-url";
+      urlSpan.textContent = item.url;
+      row.appendChild(urlSpan);
+    }
 
     frag.appendChild(row);
 
