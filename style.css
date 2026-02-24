@@ -1,0 +1,100 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
+  font-size: 15px;
+  padding: 32px;
+  line-height: 1.6;
+}
+
+#tree {
+  max-width: 720px;
+}
+
+/* ── Each node row ─────────────────────────────── */
+
+.node {
+  display: flex;
+  align-items: baseline;
+}
+
+.node.clickable {
+  cursor: pointer;
+}
+
+.node.clickable:hover {
+  background: #2a2a3e;
+}
+
+.node-prefix {
+  white-space: pre;
+  color: #585b70;
+  user-select: none;
+}
+
+.node-toggle {
+  background: none;
+  border: none;
+  color: #585b70;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+  width: 1ch;
+  text-align: center;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.node-toggle:hover {
+  color: #cdd6f4;
+}
+
+.node-toggle.open {
+  /* purely cosmetic class — JS swaps the character */
+}
+
+.node-spacer {
+  width: 1ch;
+  display: inline-block;
+}
+
+.node-label a {
+  color: #89b4fa;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.node-label a:hover {
+  color: #b4befe;
+  text-decoration: underline;
+}
+
+.node-label.folder {
+  color: #a6e3a1;
+  font-weight: bold;
+}
+
+.node-label.folder a {
+  color: #a6e3a1;
+}
+
+.node-label.folder a:hover {
+  color: #b4befe;
+}
+
+/* ── Children container ────────────────────────── */
+
+.children {
+  display: none;
+}
+
+.children.open {
+  display: block;
+}
