@@ -1,5 +1,23 @@
 document.getElementById("tree").appendChild(renderList(bookmarks, ""));
 
+document.getElementById("expand-all").addEventListener("click", () => {
+  document.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
+  document.querySelectorAll(".node-toggle").forEach((btn) => {
+    btn.classList.add("open");
+    btn.textContent = "v";
+    btn.setAttribute("aria-label", "collapse");
+  });
+});
+
+document.getElementById("collapse-all").addEventListener("click", () => {
+  document.querySelectorAll(".children").forEach((c) => c.classList.remove("open"));
+  document.querySelectorAll(".node-toggle").forEach((btn) => {
+    btn.classList.remove("open");
+    btn.textContent = ">";
+    btn.setAttribute("aria-label", "expand");
+  });
+});
+
 // Build DOM for a list of sibling nodes.
 // `prefix` is the inherited string of "│   " / "    " segments from ancestors.
 function renderList(items, prefix) {
@@ -24,7 +42,7 @@ function renderList(items, prefix) {
     if (hasChildren) {
       const btn = document.createElement("button");
       btn.className = "node-toggle";
-      btn.textContent = "> ";
+      btn.textContent = ">";
       btn.setAttribute("aria-label", "expand");
       row.appendChild(btn);
     } else {
@@ -39,10 +57,10 @@ function renderList(items, prefix) {
     if (item.url) {
       const a = document.createElement("a");
       a.href = item.url;
-      a.textContent = " " + item.name;
+      a.textContent = item.name;
       label.appendChild(a);
     } else {
-      label.textContent = " " + item.name;
+      label.textContent = item.name;
     }
     row.appendChild(label);
 
@@ -58,10 +76,12 @@ function renderList(items, prefix) {
       // Wire toggle — whole row triggers expand/collapse
       const btn = row.querySelector(".node-toggle");
       row.classList.add("clickable");
-      row.addEventListener("click", () => {
+      row.addEventListener("click", (e) => {
+        // If click landed on a link, let it navigate instead of toggling
+        if (e.target.closest("a")) return;
         const open = childrenContainer.classList.toggle("open");
         btn.classList.toggle("open", open);
-        btn.textContent = open ? "v " : "> ";
+        btn.textContent = open ? "v" : ">";
         btn.setAttribute("aria-label", open ? "collapse" : "expand");
       });
     } else if (item.url) {

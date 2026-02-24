@@ -8,9 +8,32 @@ body {
   background: #1e1e2e;
   color: #cdd6f4;
   font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
-  font-size: 15px;
+  font-size: 18px;
   padding: 32px;
   line-height: 1.6;
+}
+
+#toolbar {
+  max-width: 720px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+#toolbar button {
+  background: #313244;
+  color: #cdd6f4;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-family: inherit;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#toolbar button:hover {
+  background: #45475a;
 }
 
 #tree {
@@ -47,6 +70,7 @@ body {
   font-size: inherit;
   padding: 0;
   width: 1ch;
+  margin-right: 0.6ch;
   text-align: center;
   user-select: none;
   transition: color 0.15s;
@@ -62,6 +86,7 @@ body {
 
 .node-spacer {
   width: 1ch;
+  margin-right: 0.6ch;
   display: inline-block;
 }
 
