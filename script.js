@@ -57,6 +57,7 @@ function renderList(items, prefix) {
     if (item.url) {
       const a = document.createElement("a");
       a.href = item.url;
+      a.target = "_blank";
       a.textContent = item.name;
       label.appendChild(a);
       const arrow = document.createElement("span");
@@ -94,7 +95,7 @@ function renderList(items, prefix) {
       row.classList.add("clickable");
       row.addEventListener("click", (e) => {
         if (e.target.tagName === "A") return; // let native <a> handle itself
-        window.open(item.url, "_self");
+        window.open(item.url, "_blank");
       });
     }
   });
