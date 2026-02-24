@@ -59,6 +59,11 @@ function renderList(items, prefix) {
       a.href = item.url;
       a.textContent = item.name;
       label.appendChild(a);
+      const arrow = document.createElement("span");
+      arrow.className = "link-indicator";
+      arrow.textContent = "↗";
+      arrow.setAttribute("aria-hidden", "true");
+      label.appendChild(arrow);
     } else {
       label.textContent = item.name;
     }

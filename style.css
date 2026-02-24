@@ -101,6 +101,18 @@ body {
   text-decoration: underline;
 }
 
+.link-indicator {
+  color: #585b70;
+  font-size: 0.75em;
+  margin-left: 0.4ch;
+  transition: color 0.15s;
+}
+
+.node.clickable:hover .link-indicator,
+.node-label a:hover + .link-indicator {
+  color: #b4befe;
+}
+
 .node-label.folder {
   color: #a6e3a1;
   font-weight: bold;
