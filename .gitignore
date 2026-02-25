@@ -1,1 +1,4 @@
-bookmarks.js
+frontend/config.js
+frontend/bookmarks.js
+backend/.env
+backend/node_modules/

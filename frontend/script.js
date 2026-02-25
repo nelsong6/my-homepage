@@ -1,3 +1,85 @@
+/* global CONFIG, initAuth, login, logout, getToken, isAuthenticated, getUser */
+
+// ── DOM references ──────────────────────────────────────────────
+const loginScreen = document.getElementById("login-screen");
+const loadingEl = document.getElementById("loading");
+const appEl = document.getElementById("app");
+const tree = document.getElementById("tree");
+
+// ── App entry point ─────────────────────────────────────────────
+
+(async function main() {
+  // Show loading while Auth0 initializes
+  loginScreen.classList.add("hidden");
+  loadingEl.classList.remove("hidden");
+
+  await initAuth();
+
+  if (await isAuthenticated()) {
+    await showApp();
+  } else {
+    showLogin();
+  }
+})();
+
+// ── Auth flows ──────────────────────────────────────────────────
+
+function showLogin() {
+  loadingEl.classList.add("hidden");
+  appEl.classList.add("hidden");
+  loginScreen.classList.remove("hidden");
+}
+
+async function showApp() {
+  loadingEl.classList.add("hidden");
+  loginScreen.classList.add("hidden");
+  appEl.classList.remove("hidden");
+
+  // Show user email
+  const user = await getUser();
+  document.getElementById("user-email").textContent = user.email || user.name || "";
+
+  // Fetch bookmarks from API
+  const bookmarks = await fetchBookmarks();
+  renderBookmarks(bookmarks);
+}
+
+// ── API ─────────────────────────────────────────────────────────
+
+async function fetchBookmarks() {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${CONFIG.apiUrl}/api/bookmarks`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+    const data = await res.json();
+    return data.bookmarks || [];
+  } catch (err) {
+    console.error("Failed to fetch bookmarks:", err);
+    return [];
+  }
+}
+
+// ── Rendering ───────────────────────────────────────────────────
+
+function renderBookmarks(bookmarks) {
+  tree.innerHTML = "";
+
+  if (bookmarks.length === 0) {
+    tree.textContent = "No bookmarks yet.";
+    return;
+  }
+
+  tree.style.setProperty(
+    "--url-left",
+    Math.ceil(calcMaxRowWidth(bookmarks, "")) + 2 + "ch"
+  );
+  tree.appendChild(renderList(bookmarks, ""));
+}
+
 // Calculate the max visual width of all tree rows (in ch units) so
 // hover-revealed URLs can be aligned in a single consistent column.
 function calcMaxRowWidth(items, prefix) {
@@ -17,28 +99,6 @@ function calcMaxRowWidth(items, prefix) {
   });
   return max;
 }
-
-const tree = document.getElementById("tree");
-tree.style.setProperty("--url-left", (Math.ceil(calcMaxRowWidth(bookmarks, "")) + 2) + "ch");
-tree.appendChild(renderList(bookmarks, ""));
-
-document.getElementById("expand-all").addEventListener("click", () => {
-  document.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
-  document.querySelectorAll(".node-toggle").forEach((btn) => {
-    btn.classList.add("open");
-    btn.textContent = "v";
-    btn.setAttribute("aria-label", "collapse");
-  });
-});
-
-document.getElementById("collapse-all").addEventListener("click", () => {
-  document.querySelectorAll(".children").forEach((c) => c.classList.remove("open"));
-  document.querySelectorAll(".node-toggle").forEach((btn) => {
-    btn.classList.remove("open");
-    btn.textContent = ">";
-    btn.setAttribute("aria-label", "expand");
-  });
-});
 
 // Build DOM for a list of sibling nodes.
 // `prefix` is the inherited string of "│   " / "    " segments from ancestors.
@@ -130,3 +190,26 @@ function renderList(items, prefix) {
   });
   return frag;
 }
+
+// ── Toolbar ─────────────────────────────────────────────────────
+
+document.getElementById("expand-all").addEventListener("click", () => {
+  document.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
+  document.querySelectorAll(".node-toggle").forEach((btn) => {
+    btn.classList.add("open");
+    btn.textContent = "v";
+    btn.setAttribute("aria-label", "collapse");
+  });
+});
+
+document.getElementById("collapse-all").addEventListener("click", () => {
+  document.querySelectorAll(".children").forEach((c) => c.classList.remove("open"));
+  document.querySelectorAll(".node-toggle").forEach((btn) => {
+    btn.classList.remove("open");
+    btn.textContent = ">";
+    btn.setAttribute("aria-label", "expand");
+  });
+});
+
+document.getElementById("login-btn").addEventListener("click", login);
+document.getElementById("logout-btn").addEventListener("click", logout);

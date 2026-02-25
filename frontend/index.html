@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Login screen -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1>Home</h1>
+      <button id="login-btn">Log In</button>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loading" class="hidden">Loading…</div>
+
+  <!-- Main app (hidden until authenticated) -->
+  <div id="app" class="hidden">
+    <div id="toolbar">
+      <button id="expand-all">Expand All</button>
+      <button id="collapse-all">Collapse All</button>
+      <div id="user-info">
+        <span id="user-email"></span>
+        <button id="logout-btn">Log Out</button>
+      </div>
+    </div>
+    <div id="tree"></div>
+  </div>
+
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
