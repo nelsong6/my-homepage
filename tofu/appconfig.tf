@@ -7,7 +7,7 @@
 
 resource "azurerm_app_configuration_key" "auth0_domain" {
   configuration_store_id = var.azure_app_config_resource_id
-  key                    = "AUTH0_DOMAIN"
+  key                    = "${local.front_app_dns_name}/AUTH0_DOMAIN"
   value                  = "dev-gtdi5x5p0nmticqd.us.auth0.com"
 }
 
