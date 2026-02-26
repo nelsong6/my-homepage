@@ -1,0 +1,15 @@
+# ============================================================================
+# Azure Key Vault (data source)
+# ============================================================================
+# Reads secrets from the shared Key Vault created by the bootstrap script.
+# The vault name is passed via the Spacelift global context (TF_VAR_key_vault_name).
+
+data "azurerm_key_vault" "main" {
+  name                = var.key_vault_name
+  resource_group_name = var.resource_group_name
+}
+
+data "azurerm_key_vault_secret" "auth0_client_secret" {
+  name         = "auth0-client-secret"
+  key_vault_id = data.azurerm_key_vault.main.id
+}
