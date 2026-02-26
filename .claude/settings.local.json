@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "WebFetch(domain:registry.terraform.io)",
+      "WebFetch(domain:docs.spacelift.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:library.tf)",
+      "Bash(findstr:*)"
+    ]
+  }
+}

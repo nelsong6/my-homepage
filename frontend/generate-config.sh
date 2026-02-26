@@ -3,7 +3,7 @@
 #
 # Usage (local dev):
 #   source backend/.env     # or export the vars manually
-#   export AUTH0_DOMAIN="dev-gtdi5x5p0nmticqd.us.auth0.com"
+#   export AUTH0_DOMAIN="auth.yourdomain.com"
 #   export AUTH0_CLIENT_ID="<your-client-id>"
 #   export AUTH0_AUDIENCE="https://homepage.api.yourdomain.com"
 #   export API_URL="https://homepage.api.yourdomain.com"

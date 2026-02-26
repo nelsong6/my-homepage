@@ -6,8 +6,16 @@ const loginScreen = document.getElementById("login-screen");
 const loadingEl = document.getElementById("loading");
 const appEl = document.getElementById("app");
 const tree = document.getElementById("tree");
+const editBtn = document.getElementById("edit-btn");
+const saveBtn = document.getElementById("save-btn");
+const cancelBtn = document.getElementById("cancel-btn");
 
 const CACHE_KEY = "cached_bookmarks";
+
+// ── Edit mode state ─────────────────────────────────────────────
+let editMode = false;
+let editBookmarks = null;   // deep clone used during editing
+let currentBookmarks = [];  // last-fetched/rendered bookmarks
 
 // ── App entry point ─────────────────────────────────────────────
 
@@ -19,6 +27,7 @@ const CACHE_KEY = "cached_bookmarks";
     loginScreen.classList.add("hidden");
     loadingEl.classList.add("hidden");
     appEl.classList.remove("hidden");
+    currentBookmarks = cached;
     renderBookmarks(cached);
   } else {
     // No cache — show loading while Auth0 initializes
@@ -62,6 +71,7 @@ async function showApp(alreadyRenderedCache) {
   // Only re-render if the data actually changed (or if we had no cache)
   if (!alreadyRenderedCache || !bookmarksEqual(alreadyRenderedCache, fresh)) {
     saveCachedBookmarks(fresh);
+    currentBookmarks = fresh;
     renderBookmarks(fresh);
   }
 }
@@ -111,21 +121,55 @@ async function fetchBookmarks() {
   }
 }
 
+async function putBookmarks(bookmarks) {
+  const token = await getToken();
+  const res = await fetch(`${CONFIG.apiUrl}/api/bookmarks`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ bookmarks }),
+  });
+
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+// ── Deep clone helper ───────────────────────────────────────────
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 // ── Rendering ───────────────────────────────────────────────────
 
 function renderBookmarks(bookmarks) {
   tree.innerHTML = "";
 
-  if (bookmarks.length === 0) {
+  if (bookmarks.length === 0 && !editMode) {
     tree.textContent = "No bookmarks yet.";
     return;
   }
 
-  tree.style.setProperty(
-    "--url-left",
-    Math.ceil(calcMaxRowWidth(bookmarks, "")) + 2 + "ch"
-  );
-  tree.appendChild(renderList(bookmarks, ""));
+  if (!editMode) {
+    tree.style.setProperty(
+      "--url-left",
+      Math.ceil(calcMaxRowWidth(bookmarks, "")) + 2 + "ch"
+    );
+  }
+
+  tree.appendChild(renderList(bookmarks, "", bookmarks));
+
+  if (editMode) {
+    const addBtn = document.createElement("button");
+    addBtn.className = "add-root-btn";
+    addBtn.textContent = "+ Add bookmark";
+    addBtn.addEventListener("click", () => {
+      addNode(bookmarks, bookmarks.length);
+    });
+    tree.appendChild(addBtn);
+  }
 }
 
 // Calculate the max visual width of all tree rows (in ch units) so
@@ -150,7 +194,8 @@ function calcMaxRowWidth(items, prefix) {
 
 // Build DOM for a list of sibling nodes.
 // `prefix` is the inherited string of "│   " / "    " segments from ancestors.
-function renderList(items, prefix) {
+// `parentArray` is the array containing these items (needed for edit mutations).
+function renderList(items, prefix, parentArray) {
   const frag = document.createDocumentFragment();
   items.forEach((item, i) => {
     const isLast = i === items.length - 1;
@@ -199,12 +244,77 @@ function renderList(items, prefix) {
     }
     row.appendChild(label);
 
-    // URL hint shown on hover
-    if (item.url) {
+    // URL hint shown on hover (view mode only)
+    if (item.url && !editMode) {
       const urlSpan = document.createElement("span");
       urlSpan.className = "node-url";
       urlSpan.textContent = item.url;
       row.appendChild(urlSpan);
+    }
+
+    // Edit mode action buttons
+    if (editMode) {
+      const actions = document.createElement("span");
+      actions.className = "edit-actions";
+
+      // Edit (pencil)
+      const editNodeBtn = document.createElement("button");
+      editNodeBtn.textContent = "✎";
+      editNodeBtn.title = "Edit";
+      editNodeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        startInlineEdit(row, item, parentArray);
+      });
+      actions.appendChild(editNodeBtn);
+
+      // Add child
+      const addChildBtn = document.createElement("button");
+      addChildBtn.className = "action-add";
+      addChildBtn.textContent = "+";
+      addChildBtn.title = "Add child";
+      addChildBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!item.children) item.children = [];
+        addNode(item.children, item.children.length);
+      });
+      actions.appendChild(addChildBtn);
+
+      // Move up
+      if (i > 0) {
+        const upBtn = document.createElement("button");
+        upBtn.textContent = "↑";
+        upBtn.title = "Move up";
+        upBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          moveNode(parentArray, i, -1);
+        });
+        actions.appendChild(upBtn);
+      }
+
+      // Move down
+      if (i < items.length - 1) {
+        const downBtn = document.createElement("button");
+        downBtn.textContent = "↓";
+        downBtn.title = "Move down";
+        downBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          moveNode(parentArray, i, 1);
+        });
+        actions.appendChild(downBtn);
+      }
+
+      // Delete
+      const delBtn = document.createElement("button");
+      delBtn.className = "action-delete";
+      delBtn.textContent = "✕";
+      delBtn.title = "Delete";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteNode(parentArray, i, hasChildren);
+      });
+      actions.appendChild(delBtn);
+
+      row.appendChild(actions);
     }
 
     frag.appendChild(row);
@@ -213,30 +323,217 @@ function renderList(items, prefix) {
     if (hasChildren) {
       const childrenContainer = document.createElement("div");
       childrenContainer.className = "children";
-      childrenContainer.appendChild(renderList(item.children, childPrefix));
+      childrenContainer.appendChild(renderList(item.children, childPrefix, item.children));
       frag.appendChild(childrenContainer);
 
       // Wire toggle — whole row triggers expand/collapse
       const btn = row.querySelector(".node-toggle");
       row.classList.add("clickable");
       row.addEventListener("click", (e) => {
-        // If click landed on a link, let it navigate instead of toggling
-        if (e.target.closest("a")) return;
+        if (editMode && e.target.closest(".edit-actions")) return;
+        if (e.target.closest("a") && !editMode) return;
         const open = childrenContainer.classList.toggle("open");
         btn.classList.toggle("open", open);
         btn.textContent = open ? "v" : ">";
         btn.setAttribute("aria-label", open ? "collapse" : "expand");
       });
-    } else if (item.url) {
-      // Wire link — whole row navigates
+    } else if (item.url && !editMode) {
+      // Wire link — whole row navigates (view mode only)
       row.classList.add("clickable");
       row.addEventListener("click", (e) => {
-        if (e.target.tagName === "A") return; // let native <a> handle itself
+        if (e.target.tagName === "A") return;
         window.location.href = item.url;
       });
     }
   });
   return frag;
+}
+
+// ── Edit mode: inline editing ───────────────────────────────────
+
+function startInlineEdit(row, item, parentArray) {
+  // Replace label and actions with an inline form
+  const label = row.querySelector(".node-label");
+  const actions = row.querySelector(".edit-actions");
+  if (label) label.classList.add("hidden");
+  if (actions) actions.classList.add("hidden");
+
+  const form = document.createElement("span");
+  form.className = "node-edit-form";
+
+  const nameInput = document.createElement("input");
+  nameInput.className = "edit-name";
+  nameInput.type = "text";
+  nameInput.value = item.name;
+  nameInput.placeholder = "Name";
+  form.appendChild(nameInput);
+
+  const urlInput = document.createElement("input");
+  urlInput.className = "edit-url";
+  urlInput.type = "text";
+  urlInput.value = item.url || "";
+  urlInput.placeholder = "URL (empty = folder)";
+  form.appendChild(urlInput);
+
+  const confirmBtn = document.createElement("button");
+  confirmBtn.className = "edit-confirm";
+  confirmBtn.textContent = "✓";
+  confirmBtn.title = "Confirm";
+  form.appendChild(confirmBtn);
+
+  const cancelEditBtn = document.createElement("button");
+  cancelEditBtn.className = "edit-cancel";
+  cancelEditBtn.textContent = "✕";
+  cancelEditBtn.title = "Cancel";
+  form.appendChild(cancelEditBtn);
+
+  row.appendChild(form);
+  nameInput.focus();
+  nameInput.select();
+
+  function confirm() {
+    const name = nameInput.value.trim();
+    if (!name) return; // don't allow empty name
+    item.name = name;
+    const url = urlInput.value.trim();
+    if (url) {
+      item.url = url;
+    } else {
+      delete item.url;
+    }
+    // If item had children and now has a URL, keep both (it's a folder-link)
+    // If item had no children and no URL, it becomes a folder
+    reRenderEdit();
+  }
+
+  function cancel() {
+    form.remove();
+    if (label) label.classList.remove("hidden");
+    if (actions) actions.classList.remove("hidden");
+  }
+
+  confirmBtn.addEventListener("click", (e) => { e.stopPropagation(); confirm(); });
+  cancelEditBtn.addEventListener("click", (e) => { e.stopPropagation(); cancel(); });
+
+  nameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); confirm(); }
+    if (e.key === "Escape") { e.preventDefault(); cancel(); }
+  });
+  urlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); confirm(); }
+    if (e.key === "Escape") { e.preventDefault(); cancel(); }
+  });
+}
+
+// ── Edit mode: mutations ────────────────────────────────────────
+
+function addNode(parentArray, index) {
+  const newItem = { name: "New bookmark", url: "" };
+  parentArray.splice(index, 0, newItem);
+  reRenderEdit();
+
+  // Find the newly added row and open inline edit on it
+  // We need a small delay for the DOM to update
+  requestAnimationFrame(() => {
+    const nodes = tree.querySelectorAll(".node");
+    // Find the node with "New bookmark" text that was just added
+    for (const node of nodes) {
+      const label = node.querySelector(".node-label");
+      if (label && label.textContent.includes("New bookmark")) {
+        const editPencil = node.querySelector(".edit-actions button");
+        if (editPencil) editPencil.click();
+        break;
+      }
+    }
+  });
+}
+
+function deleteNode(parentArray, index, hasChildren) {
+  if (hasChildren) {
+    if (!confirm("Delete this folder and all its contents?")) return;
+  }
+  parentArray.splice(index, 1);
+  reRenderEdit();
+}
+
+function moveNode(parentArray, index, direction) {
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= parentArray.length) return;
+  const item = parentArray.splice(index, 1)[0];
+  parentArray.splice(newIndex, 0, item);
+  reRenderEdit();
+}
+
+function reRenderEdit() {
+  tree.classList.add("edit-mode");
+  renderBookmarks(editBookmarks);
+  // Expand all in edit mode for visibility
+  tree.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
+  tree.querySelectorAll(".node-toggle").forEach((btn) => {
+    btn.classList.add("open");
+    btn.textContent = "v";
+    btn.setAttribute("aria-label", "collapse");
+  });
+}
+
+// ── Edit mode: enter / save / cancel ────────────────────────────
+
+function enterEditMode() {
+  editMode = true;
+  editBookmarks = deepClone(currentBookmarks);
+  editBtn.classList.add("hidden");
+  saveBtn.classList.remove("hidden");
+  cancelBtn.classList.remove("hidden");
+  reRenderEdit();
+}
+
+async function saveEdits() {
+  // Clean up the bookmarks: remove empty items, trim, strip empty children arrays
+  const cleaned = cleanBookmarks(editBookmarks);
+
+  try {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    await putBookmarks(cleaned);
+    saveCachedBookmarks(cleaned);
+    currentBookmarks = cleaned;
+    exitEditMode();
+    renderBookmarks(currentBookmarks);
+  } catch (err) {
+    console.error("Failed to save bookmarks:", err);
+    alert("Failed to save. Please try again.");
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save";
+  }
+}
+
+function cancelEdits() {
+  exitEditMode();
+  renderBookmarks(currentBookmarks);
+}
+
+function exitEditMode() {
+  editMode = false;
+  editBookmarks = null;
+  tree.classList.remove("edit-mode");
+  editBtn.classList.remove("hidden");
+  saveBtn.classList.add("hidden");
+  cancelBtn.classList.add("hidden");
+  saveBtn.disabled = false;
+  saveBtn.textContent = "Save";
+}
+
+function cleanBookmarks(items) {
+  return items
+    .filter((item) => item.name && item.name.trim())
+    .map((item) => {
+      const clean = { name: item.name.trim() };
+      if (item.url && item.url.trim()) clean.url = item.url.trim();
+      if (Array.isArray(item.children) && item.children.length > 0) {
+        clean.children = cleanBookmarks(item.children);
+      }
+      return clean;
+    });
 }
 
 // ── Toolbar ─────────────────────────────────────────────────────
@@ -258,6 +555,10 @@ document.getElementById("collapse-all").addEventListener("click", () => {
     btn.setAttribute("aria-label", "expand");
   });
 });
+
+editBtn.addEventListener("click", enterEditMode);
+saveBtn.addEventListener("click", saveEdits);
+cancelBtn.addEventListener("click", cancelEdits);
 
 document.getElementById("login-btn").addEventListener("click", login);
 document.getElementById("logout-btn").addEventListener("click", logout);

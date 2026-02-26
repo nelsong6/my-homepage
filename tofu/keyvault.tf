@@ -6,7 +6,7 @@
 
 data "azurerm_key_vault" "main" {
   name                = var.key_vault_name
-  resource_group_name = var.resource_group_name
+  resource_group_name = local.infra.resource_group_name
 }
 
 data "azurerm_key_vault_secret" "auth0_client_secret" {

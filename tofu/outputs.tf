@@ -15,7 +15,7 @@ output "static_web_app_default_hostname" {
 }
 
 output "cosmos_db_name" {
-  value       = var.cosmos_db_account_name
+  value       = local.infra.cosmos_db_account_name
   description = "Cosmos DB account name"
 }
 
@@ -30,7 +30,7 @@ output "cosmos_db_container_name" {
 }
 
 output "backend_api_url" {
-  value       = "https://${local.back_app_dns_name}.${var.dns_zone_name}"
+  value       = "https://${local.back_app_dns_name}.${local.infra.dns_zone_name}"
   description = "The URL of the backend Container App API"
 }
 
@@ -40,8 +40,8 @@ output "container_app_name" {
 }
 
 output "auth0_domain" {
-  value       = azurerm_app_configuration_key.auth0_domain.value
-  description = "Auth0 tenant domain"
+  value       = local.infra.auth0_domain
+  description = "Auth0 custom domain for login branding"
 }
 
 output "auth0_client_id" {
