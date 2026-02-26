@@ -48,7 +48,6 @@ backend/node_modules/
 
 
 --- File: my-homepage\.github\workflows\container-app-build.yml ---
-# Test 6
 name: Phase 1 - CI Build
 
 permissions:
@@ -66,33 +65,102 @@ jobs:
     uses: nelsong6/pipeline-templates/.github/workflows/container-app-build-template.yml@main
     with:
       node_version: '20'
-      app_name: 'homepage-api'
-      dockerfile_path: 'backend/Dockerfile'
-      context: 'backend'
+      backend_directory: './backend'
+      image_name_suffix: 'homepage-api'
     secrets: inherit
 
---- File: my-homepage\.github\workflows\full-stack-deploy.yml ---
-name: Phase 3 - CD Deploy
+--- File: my-homepage\.github\workflows\frontend-deploy.yml ---
+name: Deploy Frontend
 
 on:
-  workflow_dispatch:
-    inputs:
-      commit_sha:
-        required: true
-        type: string
+  workflow_dispatch: # Allows manual triggering
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  call-deployment-template:
-    uses: nelsong6/pipeline-templates/.github/workflows/full-stack-deploy-template.yml@main
-    with:
-      target_sha: ${{ inputs.commit_sha }}
-      app_name: 'homepage-api'
-      frontend_dir: 'frontend'
-    secrets: inherit
+  deploy-frontend:
+    name: Deploy Vanilla JS Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install spacectl
+        uses: spacelift-io/setup-spacectl@v1
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.ARM_CLIENT_ID }}
+          tenant-id: ${{ vars.ARM_TENANT_ID }}
+          subscription-id: ${{ vars.ARM_SUBSCRIPTION_ID }}
+
+      - name: Fetch Spacelift Credentials from Key Vault
+        run: |
+          set -euo pipefail
+          
+          RAW_ID=$(az keyvault secret show --vault-name "${{ vars.KEY_VAULT_NAME }}" --name spacelift-api-key-id --query value -o tsv)
+          KV_ID=$(echo "$RAW_ID" | tr -d '\r\n')
+          echo "::add-mask::$KV_ID"
+          echo "SPACELIFT_API_KEY_ID=$KV_ID" >> $GITHUB_ENV
+
+          RAW_SECRET=$(az keyvault secret show --vault-name "${{ vars.KEY_VAULT_NAME }}" --name spacelift-api-key-secret --query value -o tsv)
+          KV_SECRET=$(echo "$RAW_SECRET" | tr -d '\r\n')
+          echo "::add-mask::$KV_SECRET"
+          echo "SPACELIFT_API_KEY_SECRET=$KV_SECRET" >> $GITHUB_ENV
+
+      - name: Fetch Outputs & Generate Config
+        env:
+          SPACELIFT_API_KEY_ENDPOINT: 'https://nelsong6.app.us.spacelift.io'
+        run: |
+          set -euo pipefail
+          APP_STACK_ID=${GITHUB_REPOSITORY#*/}
+
+          echo "Fetching outputs from infra-bootstrap..."
+          INFRA_OUTPUTS=$(spacectl stack outputs --id infra-bootstrap --output json)
+          export AUTH0_DOMAIN=$(echo "$INFRA_OUTPUTS" | jq -r '.[] | select(.id == "auth0_domain") | .value | fromjson')
+          
+          echo "Fetching outputs from app stack: $APP_STACK_ID..."
+          APP_OUTPUTS=$(spacectl stack outputs --id "$APP_STACK_ID" --output json)
+          export AUTH0_CLIENT_ID=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "auth0_client_id") | .value | fromjson')
+          export AUTH0_AUDIENCE=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "auth0_audience") | .value | fromjson')
+          export API_URL=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "backend_api_url") | .value | fromjson')
+          
+          # Save Azure variables to environment for the deploy step
+          echo "STATIC_WEB_APP_NAME=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "static_web_app_name") | .value | fromjson')" >> $GITHUB_ENV
+          echo "RESOURCE_GROUP_NAME=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "resource_group_name") | .value | fromjson')" >> $GITHUB_ENV
+
+          echo "Running config generator..."
+          chmod +x ./frontend/generate-config.sh
+          ./frontend/generate-config.sh
+
+      - name: Get Static Web App Deployment Token
+        id: static-web-app-token
+        run: |
+          DEPLOYMENT_TOKEN=$(az staticwebapp secrets list \
+            --name ${{ env.STATIC_WEB_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
+            --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$DEPLOYMENT_TOKEN"
+          echo "deployment_token=$DEPLOYMENT_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Azure Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.static-web-app-token.outputs.deployment_token }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "./frontend" # Maps directly to the root of your frontend folder
+          output_location: ""        # Purposely blank because there is no dist/ folder
+          skip_app_build: true       # Tells Azure not to look for a package.json
 
 --- File: my-homepage\.github\workflows\generate-local-env.yml ---
 name: Generate Local .env Files
@@ -151,6 +219,24 @@ AZURE_APP_CONFIG_ENDPOINT=https://infra-appconfig.azconfig.io
 APP_CONFIG_PREFIX=homepage
 AZURE_TENANT_ID="2236b5e4-81d2-4d82-bde5-17b1037999ea"
 
+
+--- File: my-homepage\backend\Dockerfile ---
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies first for layer caching
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy application code
+COPY . .
+
+# Expose the port Azure Container Apps will look for
+EXPOSE 3000
+
+# Start the Express server
+CMD ["npm", "start"]
 
 --- File: my-homepage\backend\package.json ---
 {
@@ -4207,7 +4293,7 @@ resource "azurerm_container_app" "homepage_api" {
   template {
     container {
       name   = each.key
-      image  = "ghcr.io/nelsong6/${terraform.workspace}/${each.key}:latest"
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
       cpu    = 0.25
       memory = "0.5Gi"
 
@@ -4258,6 +4344,11 @@ resource "azurerm_container_app" "homepage_api" {
       max_age_in_seconds        = 3600
       allow_credentials_enabled = true
     }
+  }
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image
+    ]
   }
 }
 

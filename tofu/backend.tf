@@ -23,7 +23,7 @@ resource "azurerm_container_app" "homepage_api" {
   template {
     container {
       name   = each.key
-      image  = "ghcr.io/nelsong6/${terraform.workspace}/${each.key}:latest"
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
       cpu    = 0.25
       memory = "0.5Gi"
 
@@ -74,6 +74,11 @@ resource "azurerm_container_app" "homepage_api" {
       max_age_in_seconds        = 3600
       allow_credentials_enabled = true
     }
+  }
+  lifecycle {
+    ignore_changes = [
+      template[0].container[0].image
+    ]
   }
 }
 
