@@ -119,19 +119,11 @@ resource "azurerm_dns_cname_record" "homepage_api" {
   record              = azurerm_container_app.homepage_api["homepage-api"].ingress[0].fqdn
 }
 
-# 3. The Custom Domain (Unsecured initially)
+# 3. The Custom Domain with Azure Managed Certificate
 resource "azurerm_container_app_custom_domain" "homepage_api" {
-  name             = "${local.back_app_dns_name}.${var.dns_zone_name}"
-  container_app_id = azurerm_container_app.homepage_api["homepage-api"].id
-
-  # We must completely omit the certificate binding fields and tell Terraform
-  # to ignore them, so it doesn't destroy the cert once Azure generates it.
-  lifecycle {
-    ignore_changes = [
-      certificate_binding_type,
-      container_app_environment_certificate_id
-    ]
-  }
+  name                     = "${local.back_app_dns_name}.${var.dns_zone_name}"
+  container_app_id         = azurerm_container_app.homepage_api["homepage-api"].id
+  certificate_binding_type = "SniEnabled"
 
   depends_on = [
     azurerm_dns_txt_record.homepage_api_verification,

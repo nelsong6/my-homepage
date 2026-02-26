@@ -51,15 +51,9 @@ jobs:
       - name: Fetch Backend Outputs
         run: |
           APP_STACK_ID=${GITHUB_REPOSITORY#*/}
-          INFRA_OUTPUTS=$(spacectl stack outputs --id infra-bootstrap --output json)
-          echo "ACA_ENVIRONMENT_NAME=$(echo "$INFRA_OUTPUTS" | jq -r '.[] | select(.id == "container_app_environment_name") | .value | fromjson')" >> $GITHUB_ENV
-          
           APP_OUTPUTS=$(spacectl stack outputs --id "$APP_STACK_ID" --output json)
           echo "CONTAINER_APP_NAME=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "container_app_name") | .value | fromjson')" >> $GITHUB_ENV
           echo "RESOURCE_GROUP_NAME=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "resource_group_name") | .value | fromjson')" >> $GITHUB_ENV
-          
-          RAW_URL=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "backend_api_url") | .value | fromjson')
-          echo "BACKEND_HOSTNAME=${RAW_URL#https://}" >> $GITHUB_ENV
 
       - name: Deploy to Container App
         run: |
@@ -67,15 +61,6 @@ jobs:
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
             --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TARGET_SHA }}
-
-      - name: Bind Custom Domain
-        run: |
-          az containerapp hostname bind \
-            --hostname ${{ env.BACKEND_HOSTNAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --environment ${{ env.ACA_ENVIRONMENT_NAME }} \
-            --validation-method CNAME
 
   # ============================================================================
   # 3a. FRONTEND PUSH
