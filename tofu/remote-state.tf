@@ -12,7 +12,7 @@ data "terraform_remote_state" "infra" {
     organization = "nelsong6"
 
     workspaces = {
-      name = "infra-bootstrap"
+      name = var.outputs_source_stack
     }
   }
 }
