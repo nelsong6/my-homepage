@@ -35,7 +35,7 @@ output "backend_api_url" {
 }
 
 output "container_app_name" {
-  value       = azurerm_container_app.homepage_api[0].name
+  value       = azurerm_container_app.homepage_api["homepage-api"].name
   description = "Name of the backend Container App, picked up by github actions to handle custom dns for container app."
 }
 

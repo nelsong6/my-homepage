@@ -82,7 +82,7 @@ resource "azurerm_cosmosdb_sql_role_assignment" "container_app_cosmos" {
   resource_group_name = var.resource_group_name
   account_name        = var.cosmos_db_account_name
   role_definition_id  = "${var.cosmos_db_account_id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002" # Built-in Data Contributor
-  principal_id        = azurerm_container_app.homepage_api[0].identity[0].principal_id
+  principal_id        = azurerm_container_app.homepage_api["homepage-api"].identity[0].principal_id
   scope               = var.cosmos_db_account_id
 }
 
@@ -90,7 +90,7 @@ resource "azurerm_cosmosdb_sql_role_assignment" "container_app_cosmos" {
 resource "azurerm_role_assignment" "container_app_appconfig_reader" {
   scope                = var.azure_app_config_resource_id
   role_definition_name = "App Configuration Data Reader"
-  principal_id         = azurerm_container_app.homepage_api[0].identity[0].principal_id
+  principal_id         = azurerm_container_app.homepage_api["homepage-api"].identity[0].principal_id
 }
 
 # 1. The Verification Record (Proves to Azure you own the domain)
@@ -101,7 +101,7 @@ resource "azurerm_dns_txt_record" "homepage_api_verification" {
   ttl                 = 3600
 
   record {
-    value = azurerm_container_app.homepage_api[0].custom_domain_verification_id
+    value = azurerm_container_app.homepage_api["homepage-api"].custom_domain_verification_id
   }
 }
 
@@ -111,13 +111,13 @@ resource "azurerm_dns_cname_record" "homepage_api" {
   zone_name           = var.dns_zone_name
   resource_group_name = var.resource_group_name
   ttl                 = 3600
-  record              = azurerm_container_app.homepage_api[0].ingress[0].fqdn
+  record              = azurerm_container_app.homepage_api["homepage-api"].ingress[0].fqdn
 }
 
 # 3. The Custom Domain (Unsecured initially)
 resource "azurerm_container_app_custom_domain" "homepage_api" {
   name             = "${local.back_app_dns_name}.${var.dns_zone_name}"
-  container_app_id = azurerm_container_app.homepage_api[0].id
+  container_app_id = azurerm_container_app.homepage_api["homepage-api"].id
 
   # We must completely omit the certificate binding fields and tell Terraform
   # to ignore them, so it doesn't destroy the cert once Azure generates it.
