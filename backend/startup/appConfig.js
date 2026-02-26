@@ -32,7 +32,7 @@ export async function fetchAppConfig() {
   const client = new AppConfigurationClient(endpoint, credential);
 
   const [domainSetting, audienceSetting, cosmosEndpointSetting] = await Promise.all([
-    client.getConfigurationSetting({ key: 'AUTH0_DOMAIN' }),
+    client.getConfigurationSetting({ key: `${prefix}/AUTH0_DOMAIN` }),
     client.getConfigurationSetting({ key: `${prefix}/AUTH0_AUDIENCE` }),
     client.getConfigurationSetting({ key: 'cosmos_db_endpoint' }),
   ]);
@@ -44,7 +44,7 @@ export async function fetchAppConfig() {
   if (!auth0Domain || !auth0Audience || !cosmosDbEndpoint) {
     throw new Error(
       `Azure App Configuration is missing required keys. ` +
-      `Ensure AUTH0_DOMAIN, ${prefix}/AUTH0_AUDIENCE, and cosmos_db_endpoint are set in the store.`
+      `Ensure ${prefix}/AUTH0_DOMAIN, ${prefix}/AUTH0_AUDIENCE, and cosmos_db_endpoint are set in the store.`
     );
   }
 
