@@ -17,8 +17,3 @@ variable "spacelift_commit_sha" {
   description = "The Git SHA passed dynamically from Spacelift to force an apply"
   type        = string
 }
-
-variable "outputs_source_stack" {
-  description = "Spacelift stack ID to read outputs from"
-  type        = string
-}

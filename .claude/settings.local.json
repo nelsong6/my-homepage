@@ -6,7 +6,10 @@
       "WebFetch(domain:docs.spacelift.io)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:library.tf)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "WebFetch(domain:search.opentofu.org)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:spacelift.io)"
     ]
   }
 }

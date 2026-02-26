@@ -1,58 +1,58 @@
 # ============================================================================
-# Remote State - Shared Infrastructure Outputs
+# Shared Infrastructure Variables (injected via Spacelift stack dependencies)
 # ============================================================================
-# Reads outputs from the infra-bootstrap Spacelift stack using the Spacelift
-# provider, which authenticates automatically during Spacelift runs.
+# These variables are automatically populated by Spacelift from the
+# infra-bootstrap stack outputs via stack dependency references.
 
-data "spacelift_stack_output" "azure_app_config_resource_id" {
-  stack_id    = var.outputs_source_stack
-  output_name = "azure_app_config_resource_id"
+variable "infra_resource_group_name" {
+  description = "Name of the shared resource group"
+  type        = string
 }
 
-data "spacelift_stack_output" "azure_app_config_endpoint" {
-  stack_id    = var.outputs_source_stack
-  output_name = "azure_app_config_endpoint"
+variable "infra_dns_zone_name" {
+  description = "Name of the shared DNS zone"
+  type        = string
 }
 
-data "spacelift_stack_output" "auth0_domain" {
-  stack_id    = var.outputs_source_stack
-  output_name = "auth0_domain"
+variable "infra_container_app_environment_id" {
+  description = "Resource ID of the shared Container App Environment"
+  type        = string
 }
 
-data "spacelift_stack_output" "container_app_environment_id" {
-  stack_id    = var.outputs_source_stack
-  output_name = "container_app_environment_id"
+variable "infra_cosmos_db_account_name" {
+  description = "Name of the shared Cosmos DB account"
+  type        = string
 }
 
-data "spacelift_stack_output" "cosmos_db_account_id" {
-  stack_id    = var.outputs_source_stack
-  output_name = "cosmos_db_account_id"
+variable "infra_cosmos_db_account_id" {
+  description = "Resource ID of the shared Cosmos DB account"
+  type        = string
 }
 
-data "spacelift_stack_output" "cosmos_db_account_name" {
-  stack_id    = var.outputs_source_stack
-  output_name = "cosmos_db_account_name"
+variable "infra_azure_app_config_endpoint" {
+  description = "Endpoint URL for the shared Azure App Configuration store"
+  type        = string
 }
 
-data "spacelift_stack_output" "dns_zone_name" {
-  stack_id    = var.outputs_source_stack
-  output_name = "dns_zone_name"
+variable "infra_azure_app_config_resource_id" {
+  description = "Resource ID of the shared Azure App Configuration store"
+  type        = string
 }
 
-data "spacelift_stack_output" "resource_group_name" {
-  stack_id    = var.outputs_source_stack
-  output_name = "resource_group_name"
+variable "infra_auth0_domain" {
+  description = "Auth0 custom domain"
+  type        = string
 }
 
 locals {
   infra = {
-    azure_app_config_resource_id = data.spacelift_stack_output.azure_app_config_resource_id.value
-    azure_app_config_endpoint    = data.spacelift_stack_output.azure_app_config_endpoint.value
-    auth0_domain                 = data.spacelift_stack_output.auth0_domain.value
-    container_app_environment_id = data.spacelift_stack_output.container_app_environment_id.value
-    cosmos_db_account_id         = data.spacelift_stack_output.cosmos_db_account_id.value
-    cosmos_db_account_name       = data.spacelift_stack_output.cosmos_db_account_name.value
-    dns_zone_name                = data.spacelift_stack_output.dns_zone_name.value
-    resource_group_name          = data.spacelift_stack_output.resource_group_name.value
+    resource_group_name          = var.infra_resource_group_name
+    dns_zone_name                = var.infra_dns_zone_name
+    container_app_environment_id = var.infra_container_app_environment_id
+    cosmos_db_account_name       = var.infra_cosmos_db_account_name
+    cosmos_db_account_id         = var.infra_cosmos_db_account_id
+    azure_app_config_endpoint    = var.infra_azure_app_config_endpoint
+    azure_app_config_resource_id = var.infra_azure_app_config_resource_id
+    auth0_domain                 = var.infra_auth0_domain
   }
 }
