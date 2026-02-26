@@ -1,8 +1,9 @@
-/* global auth0, CONFIG */
+/* global auth0 */
+import { CONFIG } from './config.js';
 
 let auth0Client = null;
 
-async function initAuth() {
+export async function initAuth() {
   auth0Client = await auth0.createAuth0Client({
     domain: CONFIG.auth0Domain,
     clientId: CONFIG.auth0ClientId,
@@ -22,26 +23,26 @@ async function initAuth() {
   return auth0Client;
 }
 
-async function login() {
+export async function login() {
   await auth0Client.loginWithRedirect();
 }
 
-async function logout() {
+export async function logout() {
   await auth0Client.logout({
     logoutParams: { returnTo: window.location.origin },
   });
 }
 
-async function getToken() {
+export async function getToken() {
   return auth0Client.getTokenSilently({
     authorizationParams: { audience: CONFIG.auth0Audience },
   });
 }
 
-async function isAuthenticated() {
+export async function isAuthenticated() {
   return auth0Client.isAuthenticated();
 }
 
-async function getUser() {
+export async function getUser() {
   return auth0Client.getUser();
 }

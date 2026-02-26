@@ -234,3 +234,31 @@ body {
 #logout-btn:hover {
   background: #45475a;
 }
+
+/* ── Mobile responsive ───────────────────────── */
+
+@media (max-width: 600px) {
+  body {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  #toolbar {
+    flex-wrap: wrap;
+  }
+
+  #user-info {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  #tree {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .node-url {
+    display: none !important;
+  }
+}

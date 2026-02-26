@@ -39,6 +39,11 @@ output "container_app_name" {
   description = "Name of the backend Container App, picked up by github actions to handle custom dns for container app."
 }
 
+output "auth0_domain" {
+  value       = azurerm_app_configuration_key.auth0_domain.value
+  description = "Auth0 tenant domain"
+}
+
 output "auth0_client_id" {
   value       = auth0_client.frontend_spa.client_id
   description = "Auth0 SPA client ID for the frontend application"

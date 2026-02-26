@@ -1,4 +1,5 @@
-/* global CONFIG, initAuth, login, logout, getToken, isAuthenticated, getUser */
+import { CONFIG } from './config.js';
+import { initAuth, login, logout, getToken, isAuthenticated, getUser } from './auth.js';
 
 // ── DOM references ──────────────────────────────────────────────
 const loginScreen = document.getElementById("login-screen");
@@ -6,17 +7,33 @@ const loadingEl = document.getElementById("loading");
 const appEl = document.getElementById("app");
 const tree = document.getElementById("tree");
 
+const CACHE_KEY = "cached_bookmarks";
+
 // ── App entry point ─────────────────────────────────────────────
 
 (async function main() {
-  // Show loading while Auth0 initializes
-  loginScreen.classList.add("hidden");
-  loadingEl.classList.remove("hidden");
+  const cached = loadCachedBookmarks();
 
+  // If we have cached data, paint immediately — no waiting for Auth0.
+  if (cached) {
+    loginScreen.classList.add("hidden");
+    loadingEl.classList.add("hidden");
+    appEl.classList.remove("hidden");
+    renderBookmarks(cached);
+  } else {
+    // No cache — show loading while Auth0 initializes
+    loginScreen.classList.add("hidden");
+    loadingEl.classList.remove("hidden");
+  }
+
+  // Auth0 init happens in the background while cached UI is already visible.
   await initAuth();
 
   if (await isAuthenticated()) {
-    await showApp();
+    await showApp(cached);
+  } else if (cached) {
+    // Had stale cache but session expired — fall back to login
+    showLogin();
   } else {
     showLogin();
   }
@@ -30,7 +47,7 @@ function showLogin() {
   loginScreen.classList.remove("hidden");
 }
 
-async function showApp() {
+async function showApp(alreadyRenderedCache) {
   loadingEl.classList.add("hidden");
   loginScreen.classList.add("hidden");
   appEl.classList.remove("hidden");
@@ -39,9 +56,39 @@ async function showApp() {
   const user = await getUser();
   document.getElementById("user-email").textContent = user.email || user.name || "";
 
-  // Fetch bookmarks from API
-  const bookmarks = await fetchBookmarks();
-  renderBookmarks(bookmarks);
+  // Fetch fresh bookmarks from API (background revalidation)
+  const fresh = await fetchBookmarks();
+
+  // Only re-render if the data actually changed (or if we had no cache)
+  if (!alreadyRenderedCache || !bookmarksEqual(alreadyRenderedCache, fresh)) {
+    saveCachedBookmarks(fresh);
+    renderBookmarks(fresh);
+  }
+}
+
+// ── localStorage helpers ────────────────────────────────────────
+
+function loadCachedBookmarks() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedBookmarks(bookmarks) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(bookmarks));
+  } catch {
+    // Storage full or unavailable — non-critical
+  }
+}
+
+function bookmarksEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 // ── API ─────────────────────────────────────────────────────────
@@ -59,7 +106,8 @@ async function fetchBookmarks() {
     return data.bookmarks || [];
   } catch (err) {
     console.error("Failed to fetch bookmarks:", err);
-    return [];
+    // On network failure, return whatever we have cached
+    return loadCachedBookmarks() || [];
   }
 }
 

@@ -16,4 +16,7 @@ jobs:
     uses: nelsong6/pipeline-templates/.github/workflows/container-app-build-template.yml@main
     with:
       node_version: '20'
+      app_name: 'homepage-api'
+      dockerfile_path: 'backend/Dockerfile'
+      context: 'backend'
     secrets: inherit
