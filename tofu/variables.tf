@@ -19,6 +19,6 @@ variable "spacelift_commit_sha" {
 }
 
 variable "outputs_source_stack" {
-  description = "Spacelift stack name to read remote state outputs from"
+  description = "Spacelift stack ID to read outputs from"
   type        = string
 }
