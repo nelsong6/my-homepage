@@ -8,7 +8,7 @@ data "terraform_remote_state" "infra" {
   backend = "remote"
 
   config = {
-    hostname     = "nelsong6.app.us.spacelift.io"
+    hostname     = "spacelift.io"
     organization = "nelsong6"
 
     workspaces = {
