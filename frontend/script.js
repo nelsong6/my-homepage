@@ -61,9 +61,16 @@ async function showApp(alreadyRenderedCache) {
   loginScreen.classList.add("hidden");
   appEl.classList.remove("hidden");
 
-  // Show user email
+  // Show user info + gravatar
   const user = await getUser();
-  document.getElementById("user-email").textContent = user.email || user.name || "";
+  const email = user.email || "";
+  document.getElementById("user-email").textContent = email || user.name || "";
+  if (email) {
+    const hash = await sha256(email.trim().toLowerCase());
+    const avatar = document.getElementById("user-avatar");
+    avatar.src = `https://www.gravatar.com/avatar/${hash}?s=48&d=identicon`;
+    avatar.classList.remove("hidden");
+  }
 
   // Fetch fresh bookmarks from API (background revalidation)
   const fresh = await fetchBookmarks();
@@ -134,6 +141,18 @@ async function putBookmarks(bookmarks) {
 
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
+}
+
+// ── SHA-256 helper (for Gravatar) ────────────────────────────────
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(str)
+  );
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // ── Deep clone helper ───────────────────────────────────────────
@@ -551,7 +570,6 @@ const importExportBtn = document.getElementById("import-export-btn");
 const importExportPanel = document.getElementById("import-export-panel");
 const importExportText = document.getElementById("import-export-text");
 const importBtn = document.getElementById("import-btn");
-const formatTabs = document.querySelectorAll(".format-tab");
 let currentFormat = "yaml";
 
 importExportBtn.addEventListener("click", () => {
@@ -559,17 +577,6 @@ importExportBtn.addEventListener("click", () => {
   if (opening) {
     importExportText.value = serializeBookmarks(currentBookmarks, currentFormat);
   }
-});
-
-formatTabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    formatTabs.forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
-    currentFormat = tab.dataset.format;
-    // Re-serialize with the new format, but only if the text still matches
-    // the previous serialization (i.e. user hasn't edited it)
-    importExportText.value = serializeBookmarks(currentBookmarks, currentFormat);
-  });
 });
 
 importBtn.addEventListener("click", async () => {
@@ -611,19 +618,13 @@ importBtn.addEventListener("click", async () => {
 
 function serializeBookmarks(bookmarks, format) {
   switch (format) {
-    case "json": return JSON.stringify(bookmarks, null, 2);
-    case "js":   return "const bookmarks = " + JSON.stringify(bookmarks, null, 2) + ";\n";
-    case "yaml":
-    default:     return bookmarksToYaml(bookmarks);
+    default: return bookmarksToYaml(bookmarks);
   }
 }
 
 function deserializeBookmarks(text, format) {
   switch (format) {
-    case "json": return JSON.parse(text);
-    case "js":   return parseJsBookmarks(text);
-    case "yaml":
-    default:     return yamlToBookmarks(text);
+    default: return yamlToBookmarks(text);
   }
 }
 
@@ -699,34 +700,30 @@ function yamlToBookmarks(text) {
   return parseList(0);
 }
 
-// ── JS parser ───────────────────────────────────────────────────
-
-function parseJsBookmarks(text) {
-  // Strip common wrappers: const bookmarks = ...; / export default ...;
-  let cleaned = text.trim();
-  cleaned = cleaned.replace(/^(?:export\s+default|(?:const|let|var)\s+\w+\s*=)\s*/, "");
-  cleaned = cleaned.replace(/;\s*$/, "");
-  return JSON.parse(cleaned);
-}
-
 // ── Toolbar ─────────────────────────────────────────────────────
 
-document.getElementById("expand-all").addEventListener("click", () => {
-  document.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
-  document.querySelectorAll(".node-toggle").forEach((btn) => {
-    btn.classList.add("open");
-    btn.textContent = "v";
-    btn.setAttribute("aria-label", "collapse");
-  });
-});
+const toggleAllBtn = document.getElementById("toggle-all");
+let allExpanded = true;
 
-document.getElementById("collapse-all").addEventListener("click", () => {
-  document.querySelectorAll(".children").forEach((c) => c.classList.remove("open"));
-  document.querySelectorAll(".node-toggle").forEach((btn) => {
-    btn.classList.remove("open");
-    btn.textContent = ">";
-    btn.setAttribute("aria-label", "expand");
-  });
+toggleAllBtn.addEventListener("click", () => {
+  const anyOpen = document.querySelectorAll(".children.open").length > 0;
+  if (anyOpen) {
+    document.querySelectorAll(".children").forEach((c) => c.classList.remove("open"));
+    document.querySelectorAll(".node-toggle").forEach((btn) => {
+      btn.classList.remove("open");
+      btn.textContent = ">";
+      btn.setAttribute("aria-label", "expand");
+    });
+    toggleAllBtn.textContent = "+";
+  } else {
+    document.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
+    document.querySelectorAll(".node-toggle").forEach((btn) => {
+      btn.classList.add("open");
+      btn.textContent = "v";
+      btn.setAttribute("aria-label", "collapse");
+    });
+    toggleAllBtn.textContent = "-";
+  }
 });
 
 editBtn.addEventListener("click", enterEditMode);

@@ -215,10 +215,16 @@ body {
 /* ── User info / logout ──────────────────────── */
 
 #user-info {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 12px;
+}
+
+#user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
 }
 
 #user-email {
@@ -461,8 +467,6 @@ body {
 
   #user-info {
     width: 100%;
-    margin-left: 0;
-    justify-content: flex-end;
   }
 
   #tree {

@@ -8,7 +8,7 @@
 </head>
 <body>
   <!-- Login screen -->
-  <div id="login-screen">
+  <div id="login-screen" class="hidden">
     <div class="login-box">
       <h1>Home</h1>
       <button id="login-btn">Log In</button>
@@ -20,24 +20,19 @@
 
   <!-- Main app (hidden until authenticated) -->
   <div id="app" class="hidden">
+    <div id="user-info">
+      <img id="user-avatar" class="hidden" alt="" />
+      <span id="user-email"></span>
+      <button id="logout-btn">Log Out</button>
+    </div>
     <div id="toolbar">
-      <button id="expand-all">Expand All</button>
-      <button id="collapse-all">Collapse All</button>
+      <button id="toggle-all">+</button>
       <button id="edit-btn">Edit</button>
       <button id="save-btn" class="hidden">Save</button>
       <button id="cancel-btn" class="hidden">Cancel</button>
       <button id="import-export-btn">Import/Export</button>
-      <div id="user-info">
-        <span id="user-email"></span>
-        <button id="logout-btn">Log Out</button>
-      </div>
     </div>
     <div id="import-export-panel" class="hidden">
-      <div id="format-tabs">
-        <button class="format-tab active" data-format="yaml">YAML</button>
-        <button class="format-tab" data-format="json">JSON</button>
-        <button class="format-tab" data-format="js">JS</button>
-      </div>
       <textarea id="import-export-text" rows="14" spellcheck="false"></textarea>
       <button id="import-btn">Import</button>
     </div>

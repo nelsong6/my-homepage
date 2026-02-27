@@ -7,6 +7,7 @@ export async function initAuth() {
   auth0Client = await auth0.createAuth0Client({
     domain: CONFIG.auth0Domain,
     clientId: CONFIG.auth0ClientId,
+    cacheLocation: "localstorage",
     authorizationParams: {
       redirect_uri: window.location.origin,
       audience: CONFIG.auth0Audience,

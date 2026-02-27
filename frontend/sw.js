@@ -1,4 +1,4 @@
-const CACHE_NAME = "app-shell-v1";
+const CACHE_NAME = "app-shell-v2";
 const SHELL_ASSETS = [
   "/",
   "/index.html",
@@ -40,24 +40,25 @@ self.addEventListener("fetch", (event) => {
   // Skip API calls — let the app handle those with its own caching
   if (url.pathname.startsWith("/api/")) return;
 
+  // Skip Auth0 callback redirects so the auth SDK can process them
+  if (url.searchParams.has("code") && url.searchParams.has("state")) return;
+
   // Skip cross-origin requests (Auth0 CDN, etc.)
   if (url.origin !== self.location.origin) return;
 
+  // Network-first: try network, fall back to cache for offline support
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-
-      // Handle root navigation explicitly
-      if (event.request.mode === 'navigate') {
-        return caches.match('/index.html').then(html => html || fetch(event.request));
-      }
-
-      return fetch(event.request).then((response) => {
-        // Cache new same-origin assets on the fly
+    fetch(event.request)
+      .then((response) => {
         const clone = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         return response;
-      });
-    })
+      })
+      .catch(() => {
+        if (event.request.mode === "navigate") {
+          return caches.match("/index.html");
+        }
+        return caches.match(event.request);
+      })
   );
 });
