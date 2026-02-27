@@ -143,7 +143,7 @@ resource "azapi_resource" "homepage_api_managed_cert" {
 resource "azurerm_container_app_custom_domain" "homepage_api" {
   name                                             = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
   container_app_id                                 = azurerm_container_app.homepage_api["homepage-api"].id
-  container_app_environment_managed_certificate_id = azapi_resource.homepage_api_managed_cert.id
+  container_app_environment_certificate_id = azapi_resource.homepage_api_managed_cert.id
   certificate_binding_type                         = "SniEnabled"
 
   depends_on = [
