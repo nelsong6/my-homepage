@@ -42,6 +42,36 @@ resource "azapi_update_resource" "homepage_default_domain" {
   }
 }
 
+# ============================================================================
+# Auth0 Social Connection Links
+# ============================================================================
+# Link tenant-level social connections (from infra-bootstrap) to this SPA.
+# This makes the login buttons appear on the Universal Login page.
+
+resource "auth0_connection_clients" "github_spa" {
+  connection_id   = local.infra.auth0_connection_github_id
+  enabled_clients = [auth0_client.frontend_spa.id]
+}
+
+resource "auth0_connection_clients" "google_spa" {
+  connection_id   = local.infra.auth0_connection_google_id
+  enabled_clients = [auth0_client.frontend_spa.id]
+}
+
+resource "auth0_connection_clients" "apple_spa" {
+  connection_id   = local.infra.auth0_connection_apple_id
+  enabled_clients = [auth0_client.frontend_spa.id]
+}
+
+resource "auth0_connection_clients" "microsoft_spa" {
+  connection_id   = local.infra.auth0_connection_microsoft_id
+  enabled_clients = [auth0_client.frontend_spa.id]
+}
+
+# ============================================================================
+# Auth0 Frontend SPA Client
+# ============================================================================
+
 resource "auth0_client" "frontend_spa" {
   name           = "My Homepage Web UI"
   app_type       = "spa"
