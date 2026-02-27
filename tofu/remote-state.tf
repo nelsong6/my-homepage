@@ -44,6 +44,11 @@ variable "infra_auth0_domain" {
   type        = string
 }
 
+variable "infra_auth0_canonical_domain" {
+  description = "Auth0 canonical tenant domain for firewall bypass"
+  type        = string
+}
+
 variable "infra_auth0_connection_github_id" {
   description = "Auth0 GitHub connection ID"
   type        = string
@@ -74,6 +79,7 @@ locals {
     azure_app_config_endpoint      = var.infra_azure_app_config_endpoint
     azure_app_config_resource_id   = var.infra_azure_app_config_resource_id
     auth0_domain                   = var.infra_auth0_domain
+    auth0_canonical_domain         = var.infra_auth0_canonical_domain
     auth0_connection_github_id     = var.infra_auth0_connection_github_id
     auth0_connection_google_id     = var.infra_auth0_connection_google_id
     auth0_connection_apple_id      = var.infra_auth0_connection_apple_id

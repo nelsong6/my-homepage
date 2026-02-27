@@ -22,3 +22,9 @@ resource "azurerm_app_configuration_key" "auth0_client_id" {
   key                    = "${local.front_app_dns_name}/AUTH0_CLIENT_ID"
   value                  = auth0_client.frontend_spa.client_id
 }
+
+resource "azurerm_app_configuration_key" "auth0_canonical_domain" {
+  configuration_store_id = local.infra.azure_app_config_resource_id
+  key                    = "${local.front_app_dns_name}/AUTH0_CANONICAL_DOMAIN"
+  value                  = local.infra.auth0_canonical_domain
+}

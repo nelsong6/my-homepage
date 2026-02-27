@@ -19,10 +19,10 @@ app.use(morgan('combined'));
 
 async function startServer() {
   // Step 1: Fetch AUTH0_DOMAIN and AUTH0_AUDIENCE from Azure App Configuration.
-  const { auth0Domain, auth0Audience, cosmosDbEndpoint } = await fetchAppConfig();
+  const { auth0Domain, auth0CanonicalDomain, auth0Audience, cosmosDbEndpoint } = await fetchAppConfig();
 
   // Step 2: Build the Auth0 JWT middleware now that we have the values.
-  const requireAuth = createRequireAuth({ auth0Domain, auth0Audience });
+  const requireAuth = createRequireAuth({ auth0Domain, auth0CanonicalDomain, auth0Audience });
 
   // Step 3: Initialize Cosmos DB client.
   const DATABASE_NAME = process.env.COSMOS_DB_DATABASE_NAME || 'HomepageDB';

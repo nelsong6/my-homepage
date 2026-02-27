@@ -7,7 +7,7 @@ import { DefaultAzureCredential } from '@azure/identity';
  * AZURE_APP_CONFIG_ENDPOINT is infrastructure config (not a secret) and
  * is injected as a plain environment variable on the Container App.
  *
- * @returns {Promise<{ auth0Domain: string, auth0Audience: string, cosmosDbEndpoint: string }>}
+ * @returns {Promise<{ auth0Domain: string, auth0CanonicalDomain: string, auth0Audience: string, cosmosDbEndpoint: string }>}
  */
 export async function fetchAppConfig() {
   const endpoint = process.env.AZURE_APP_CONFIG_ENDPOINT;
@@ -31,23 +31,25 @@ export async function fetchAppConfig() {
   const credential = new DefaultAzureCredential();
   const client = new AppConfigurationClient(endpoint, credential);
 
-  const [domainSetting, audienceSetting, cosmosEndpointSetting] = await Promise.all([
+  const [domainSetting, canonicalDomainSetting, audienceSetting, cosmosEndpointSetting] = await Promise.all([
     client.getConfigurationSetting({ key: `${prefix}/AUTH0_DOMAIN` }),
+    client.getConfigurationSetting({ key: `${prefix}/AUTH0_CANONICAL_DOMAIN` }),
     client.getConfigurationSetting({ key: `${prefix}/AUTH0_AUDIENCE` }),
     client.getConfigurationSetting({ key: 'cosmos_db_endpoint' }),
   ]);
 
   const auth0Domain = domainSetting.value;
+  const auth0CanonicalDomain = canonicalDomainSetting.value;
   const auth0Audience = audienceSetting.value;
   const cosmosDbEndpoint = cosmosEndpointSetting.value;
 
-  if (!auth0Domain || !auth0Audience || !cosmosDbEndpoint) {
+  if (!auth0Domain || !auth0CanonicalDomain || !auth0Audience || !cosmosDbEndpoint) {
     throw new Error(
       `Azure App Configuration is missing required keys. ` +
-      `Ensure ${prefix}/AUTH0_DOMAIN, ${prefix}/AUTH0_AUDIENCE, and cosmos_db_endpoint are set in the store.`
+      `Ensure ${prefix}/AUTH0_DOMAIN, ${prefix}/AUTH0_CANONICAL_DOMAIN, ${prefix}/AUTH0_AUDIENCE, and cosmos_db_endpoint are set in the store.`
     );
   }
 
   console.log('[appConfig] Application config fetched from Azure App Configuration');
-  return { auth0Domain, auth0Audience, cosmosDbEndpoint };
+  return { auth0Domain, auth0CanonicalDomain, auth0Audience, cosmosDbEndpoint };
 }

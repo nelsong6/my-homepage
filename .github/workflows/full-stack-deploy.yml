@@ -100,11 +100,13 @@ jobs:
 
           INFRA_OUTPUTS=$(spacectl stack outputs --id infra-bootstrap --output json)
           export AUTH0_DOMAIN=$(echo "$INFRA_OUTPUTS" | jq -r '.[] | select(.id == "auth0_domain") | .value | fromjson')
-          
+          export AUTH0_CANONICAL_DOMAIN=$(echo "$INFRA_OUTPUTS" | jq -r '.[] | select(.id == "auth0_canonical_domain") | .value | fromjson')
+
           APP_OUTPUTS=$(spacectl stack outputs --id "$APP_STACK_ID" --output json)
           export AUTH0_CLIENT_ID=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "auth0_client_id") | .value | fromjson')
           export AUTH0_AUDIENCE=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "auth0_audience") | .value | fromjson')
           export API_URL=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "backend_api_url") | .value | fromjson')
+          export API_BYPASS_URL="https://$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "container_app_default_fqdn") | .value | fromjson')"
           
           echo "STATIC_WEB_APP_NAME=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "static_web_app_name") | .value | fromjson')" >> $GITHUB_ENV
           echo "RESOURCE_GROUP_NAME=$(echo "$APP_OUTPUTS" | jq -r '.[] | select(.id == "resource_group_name") | .value | fromjson')" >> $GITHUB_ENV
