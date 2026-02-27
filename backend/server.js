@@ -180,15 +180,16 @@ async function startServer() {
     res.status(500).json({ error: 'Internal server error', message: err.message });
   });
 
-  // Step 5: Start listening only after all setup is complete.
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Database: ${DATABASE_NAME}`);
-    console.log(`Container: ${CONTAINER_NAME}`);
-    console.log(`Auth0 domain: ${auth0Domain}`);
-    console.log(`Health check: http://localhost:${PORT}/health`);
-  });
+  console.log(`Database: ${DATABASE_NAME}`);
+  console.log(`Container: ${CONTAINER_NAME}`);
+  console.log(`Auth0 domain: ${auth0Domain}`);
+  console.log('Server ready');
 }
+
+// Listen immediately so Azure startup probes pass while async init runs.
+app.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}, initializing...`);
+});
 
 startServer().catch((error) => {
   console.error('Fatal startup error:', error);

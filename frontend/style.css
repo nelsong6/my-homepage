@@ -159,6 +159,19 @@ body {
   padding: 12px 0;
 }
 
+/* ── API error banner ────────────────────────── */
+
+#api-error {
+  max-width: 720px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  background: #2a2030;
+  color: #f38ba8;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  font-size: 0.8em;
+}
+
 /* ── Hidden utility ──────────────────────────── */
 
 .hidden {

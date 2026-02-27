@@ -10,6 +10,7 @@ const editBtn = document.getElementById("edit-btn");
 const saveBtn = document.getElementById("save-btn");
 const cancelBtn = document.getElementById("cancel-btn");
 const moreBtn = document.getElementById("more-btn");
+const apiError = document.getElementById("api-error");
 
 const CACHE_KEY = "cached_bookmarks";
 
@@ -82,6 +83,16 @@ async function showApp(alreadyRenderedCache) {
     currentBookmarks = fresh;
     renderBookmarks(fresh);
   }
+
+}
+
+function showApiError(msg) {
+  apiError.textContent = msg;
+  apiError.classList.remove("hidden");
+}
+
+function hideApiError() {
+  apiError.classList.add("hidden");
 }
 
 // ── localStorage helpers ────────────────────────────────────────
@@ -121,9 +132,11 @@ async function fetchBookmarks() {
     if (!res.ok) throw new Error(`API error: ${res.status}`);
 
     const data = await res.json();
+    hideApiError();
     return data.bookmarks || [];
   } catch (err) {
     console.error("Failed to fetch bookmarks:", err);
+    showApiError(`Could not reach the API (${err.message})`);
     // On network failure, return whatever we have cached
     return loadCachedBookmarks() || [];
   }

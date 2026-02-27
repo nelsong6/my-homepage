@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(netstat:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(xargs:*)",
+      "Bash(Select-String -Pattern \"image|IMAGE_NAME|containerapp update\")"
     ]
   }
 }

@@ -119,16 +119,25 @@ resource "azurerm_dns_cname_record" "homepage_api" {
   record              = azurerm_container_app.homepage_api["homepage-api"].ingress[0].fqdn
 }
 
-import {
-  to = azurerm_container_app_custom_domain.homepage_api
-  id = "/subscriptions/aee0cbd2-8074-4001-b610-0f8edb4eaa3c/resourceGroups/homepage-rg/providers/Microsoft.App/containerApps/homepage-api/customDomainName/homepage.api.romaine.life"
+# 3a. The Custom Domain (must exist before managed certificate can be provisioned)
+resource "azurerm_container_app_custom_domain" "homepage_api" {
+  name                                             = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
+  container_app_id                                 = azurerm_container_app.homepage_api["homepage-api"].id
+  container_app_environment_managed_certificate_id = azurerm_container_app_environment_managed_certificate.homepage_api.id
+  certificate_binding_type                         = "SniEnabled"
+
+  depends_on = [
+    azurerm_dns_txt_record.homepage_api_verification,
+    azurerm_dns_cname_record.homepage_api
+  ]
 }
 
-# 3. The Custom Domain with Azure Managed Certificate
-resource "azurerm_container_app_custom_domain" "homepage_api" {
-  name                     = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
-  container_app_id         = azurerm_container_app.homepage_api["homepage-api"].id
-  certificate_binding_type = "SniEnabled"
+# 3b. Azure Managed Certificate for the custom domain
+resource "azurerm_container_app_environment_managed_certificate" "homepage_api" {
+  name                                  = "homepage-api-cert"
+  container_app_environment_id          = local.infra.container_app_environment_id
+  subject_name                          = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
+  domain_control_validation             = "CNAME"
 
   depends_on = [
     azurerm_dns_txt_record.homepage_api_verification,
