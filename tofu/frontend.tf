@@ -83,16 +83,19 @@ resource "auth0_client" "frontend_spa" {
   is_first_party = true
   callbacks = [
     "http://localhost:3000",
+    "http://localhost:5000",
     "http://localhost:5500",
     "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}"
   ]
   allowed_logout_urls = [
     "http://localhost:3000",
+    "http://localhost:5000",
     "http://localhost:5500",
     "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}"
   ]
   web_origins = [
     "http://localhost:3000",
+    "http://localhost:5000",
     "http://localhost:5500",
     "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}"
   ]

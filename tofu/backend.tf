@@ -65,6 +65,7 @@ resource "azurerm_container_app" "homepage_api" {
 
         # Development: Localhost
         "http://localhost:3000",
+        "http://localhost:5000",
         "http://localhost:5500"
       ]
 
