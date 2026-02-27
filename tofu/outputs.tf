@@ -9,9 +9,9 @@ output "static_web_app_name" {
   description = "Name of the Azure Static Web App"
 }
 
-output "static_web_app_default_hostname" {
-  value       = azurerm_static_web_app.homepage.default_host_name
-  description = "Default hostname of the Static Web App"
+output "static_web_app_hostname" {
+  value       = "${local.front_app_dns_name}.${local.infra.dns_zone_name}"
+  description = "Custom domain hostname of the Static Web App"
 }
 
 output "cosmos_db_name" {

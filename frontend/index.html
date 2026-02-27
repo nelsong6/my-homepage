@@ -26,10 +26,20 @@
       <button id="edit-btn">Edit</button>
       <button id="save-btn" class="hidden">Save</button>
       <button id="cancel-btn" class="hidden">Cancel</button>
+      <button id="import-export-btn">Import/Export</button>
       <div id="user-info">
         <span id="user-email"></span>
         <button id="logout-btn">Log Out</button>
       </div>
+    </div>
+    <div id="import-export-panel" class="hidden">
+      <div id="format-tabs">
+        <button class="format-tab active" data-format="yaml">YAML</button>
+        <button class="format-tab" data-format="json">JSON</button>
+        <button class="format-tab" data-format="js">JS</button>
+      </div>
+      <textarea id="import-export-text" rows="14" spellcheck="false"></textarea>
+      <button id="import-btn">Import</button>
     </div>
     <div id="tree"></div>
   </div>

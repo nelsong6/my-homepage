@@ -152,6 +152,13 @@ body {
   display: block;
 }
 
+/* ── Empty state ─────────────────────────────── */
+
+.empty-state {
+  color: #a6adc8;
+  padding: 12px 0;
+}
+
 /* ── Hidden utility ──────────────────────────── */
 
 .hidden {
@@ -366,6 +373,78 @@ body {
   pointer-events: none;
   color: #89b4fa;
   text-decoration: none;
+}
+
+/* ── Import/Export panel ─────────────────────── */
+
+#import-export-panel {
+  max-width: 720px;
+  margin-bottom: 12px;
+}
+
+#format-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.format-tab {
+  background: #313244;
+  color: #585b70;
+  border: 1px solid #45475a;
+  border-radius: 4px 4px 0 0;
+  padding: 3px 14px;
+  font-family: inherit;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.format-tab:hover {
+  color: #cdd6f4;
+}
+
+.format-tab.active {
+  background: #45475a;
+  color: #cdd6f4;
+  border-bottom-color: #45475a;
+}
+
+#import-export-text {
+  width: 100%;
+  background: #313244;
+  color: #cdd6f4;
+  border: 1px solid #45475a;
+  border-radius: 0 4px 4px 4px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.85em;
+  line-height: 1.5;
+  resize: vertical;
+  tab-size: 2;
+}
+
+#import-export-text:focus {
+  outline: none;
+  border-color: #89b4fa;
+}
+
+#import-btn {
+  margin-top: 6px;
+  background: #89b4fa;
+  color: #1e1e2e;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 16px;
+  font-family: inherit;
+  font-size: 0.8em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#import-btn:hover {
+  background: #b4befe;
 }
 
 /* ── Mobile responsive ───────────────────────── */

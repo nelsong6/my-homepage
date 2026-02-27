@@ -148,7 +148,10 @@ function renderBookmarks(bookmarks) {
   tree.innerHTML = "";
 
   if (bookmarks.length === 0 && !editMode) {
-    tree.textContent = "No bookmarks yet.";
+    const msg = document.createElement("div");
+    msg.className = "empty-state";
+    msg.textContent = 'No bookmarks yet. Click "Edit" to add some.';
+    tree.appendChild(msg);
     return;
   }
 
@@ -162,6 +165,12 @@ function renderBookmarks(bookmarks) {
   tree.appendChild(renderList(bookmarks, "", bookmarks));
 
   if (editMode) {
+    if (bookmarks.length === 0) {
+      const hint = document.createElement("div");
+      hint.className = "empty-state";
+      hint.textContent = "Add your first bookmark below.";
+      tree.appendChild(hint);
+    }
     const addBtn = document.createElement("button");
     addBtn.className = "add-root-btn";
     addBtn.textContent = "+ Add bookmark";
@@ -534,6 +543,170 @@ function cleanBookmarks(items) {
       }
       return clean;
     });
+}
+
+// ── Import / Export ──────────────────────────────────────────────
+
+const importExportBtn = document.getElementById("import-export-btn");
+const importExportPanel = document.getElementById("import-export-panel");
+const importExportText = document.getElementById("import-export-text");
+const importBtn = document.getElementById("import-btn");
+const formatTabs = document.querySelectorAll(".format-tab");
+let currentFormat = "yaml";
+
+importExportBtn.addEventListener("click", () => {
+  const opening = importExportPanel.classList.toggle("hidden") === false;
+  if (opening) {
+    importExportText.value = serializeBookmarks(currentBookmarks, currentFormat);
+  }
+});
+
+formatTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    formatTabs.forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentFormat = tab.dataset.format;
+    // Re-serialize with the new format, but only if the text still matches
+    // the previous serialization (i.e. user hasn't edited it)
+    importExportText.value = serializeBookmarks(currentBookmarks, currentFormat);
+  });
+});
+
+importBtn.addEventListener("click", async () => {
+  const text = importExportText.value.trim();
+  if (!text) return;
+
+  let parsed;
+  try {
+    parsed = deserializeBookmarks(text, currentFormat);
+  } catch (err) {
+    alert("Failed to parse: " + err.message);
+    return;
+  }
+
+  if (!Array.isArray(parsed)) {
+    alert("Import data must be an array of bookmarks.");
+    return;
+  }
+
+  const cleaned = cleanBookmarks(parsed);
+  try {
+    importBtn.disabled = true;
+    importBtn.textContent = "Importing…";
+    await putBookmarks(cleaned);
+    saveCachedBookmarks(cleaned);
+    currentBookmarks = cleaned;
+    renderBookmarks(currentBookmarks);
+    importExportPanel.classList.add("hidden");
+  } catch (err) {
+    console.error("Failed to import bookmarks:", err);
+    alert("Failed to save imported bookmarks. Please try again.");
+  } finally {
+    importBtn.disabled = false;
+    importBtn.textContent = "Import";
+  }
+});
+
+// ── Serializers ─────────────────────────────────────────────────
+
+function serializeBookmarks(bookmarks, format) {
+  switch (format) {
+    case "json": return JSON.stringify(bookmarks, null, 2);
+    case "js":   return "const bookmarks = " + JSON.stringify(bookmarks, null, 2) + ";\n";
+    case "yaml":
+    default:     return bookmarksToYaml(bookmarks);
+  }
+}
+
+function deserializeBookmarks(text, format) {
+  switch (format) {
+    case "json": return JSON.parse(text);
+    case "js":   return parseJsBookmarks(text);
+    case "yaml":
+    default:     return yamlToBookmarks(text);
+  }
+}
+
+// ── YAML serializer ─────────────────────────────────────────────
+
+function bookmarksToYaml(items, indent) {
+  indent = indent || 0;
+  const pad = "  ".repeat(indent);
+  let out = "";
+  for (const item of items) {
+    out += pad + "- name: " + item.name + "\n";
+    if (item.url) out += pad + "  url: " + item.url + "\n";
+    if (Array.isArray(item.children) && item.children.length > 0) {
+      out += pad + "  children:\n";
+      out += bookmarksToYaml(item.children, indent + 2);
+    }
+  }
+  return out;
+}
+
+// ── YAML parser (minimal, for our bookmark schema only) ─────────
+
+function yamlToBookmarks(text) {
+  const lines = text.split("\n").filter((l) => l.trim() !== "");
+  let pos = 0;
+
+  function parseList(baseIndent) {
+    const items = [];
+    while (pos < lines.length) {
+      const line = lines[pos];
+      const indent = line.search(/\S/);
+      if (indent < baseIndent) break;
+
+      const nameMatch = line.match(/^(\s*)- name:\s*(.+)/);
+      if (!nameMatch) break;
+      if (nameMatch[1].length !== baseIndent) break;
+
+      const item = { name: nameMatch[2].trim() };
+      pos++;
+
+      // Parse properties at baseIndent + 2
+      const propIndent = baseIndent + 2;
+      while (pos < lines.length) {
+        const propLine = lines[pos];
+        const pi = propLine.search(/\S/);
+        if (pi !== propIndent) break;
+        const trimmed = propLine.trim();
+
+        if (trimmed.startsWith("- ")) break; // next sibling list item
+
+        const urlMatch = trimmed.match(/^url:\s*(.+)/);
+        if (urlMatch) {
+          item.url = urlMatch[1].trim();
+          pos++;
+          continue;
+        }
+
+        if (trimmed === "children:") {
+          pos++;
+          item.children = parseList(propIndent + 2);
+          continue;
+        }
+
+        // Unknown property, skip
+        pos++;
+      }
+
+      items.push(item);
+    }
+    return items;
+  }
+
+  return parseList(0);
+}
+
+// ── JS parser ───────────────────────────────────────────────────
+
+function parseJsBookmarks(text) {
+  // Strip common wrappers: const bookmarks = ...; / export default ...;
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^(?:export\s+default|(?:const|let|var)\s+\w+\s*=)\s*/, "");
+  cleaned = cleaned.replace(/;\s*$/, "");
+  return JSON.parse(cleaned);
 }
 
 // ── Toolbar ─────────────────────────────────────────────────────

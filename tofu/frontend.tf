@@ -31,6 +31,17 @@ resource "azurerm_static_web_app_custom_domain" "homepage" {
   depends_on        = [azurerm_dns_cname_record.homepage]
 }
 
+resource "azapi_update_resource" "homepage_default_domain" {
+  type        = "Microsoft.Web/staticSites/customDomains@2024-04-01"
+  resource_id = azurerm_static_web_app_custom_domain.homepage.id
+
+  body = {
+    properties = {
+      isDefault = true
+    }
+  }
+}
+
 resource "auth0_client" "frontend_spa" {
   name           = "My Homepage Web UI"
   app_type       = "spa"
