@@ -20,12 +20,6 @@
   <!-- Loading state -->
   <div id="loading" class="hidden">Loading…</div>
 
-  <!-- Playground banner (shown when not authenticated) -->
-  <div id="playground-banner" class="hidden">
-    <span>Playground — your changes won't be saved.</span>
-    <button id="playground-login-btn">Log in</button>
-  </div>
-
   <!-- Main app (hidden until authenticated) -->
   <div id="app" class="hidden">
     <div id="toolbar">
@@ -38,6 +32,7 @@
     </div>
     <div id="import-export-panel" class="hidden">
       <textarea id="import-export-text" rows="14" spellcheck="false"></textarea>
+      <div id="yaml-status"></div>
       <button id="import-btn">Import</button>
     </div>
     <div id="api-error" class="hidden"></div>

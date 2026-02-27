@@ -23,9 +23,6 @@ let currentBookmarks = [];  // last-fetched/rendered bookmarks
 let userAuthenticated = false;
 let playgroundMode = false;
 
-const playgroundBanner = document.getElementById("playground-banner");
-const playgroundLoginBtn = document.getElementById("playground-login-btn");
-
 const SAMPLE_BOOKMARKS = [
   {
     name: "Getting Started",
@@ -77,14 +74,13 @@ function showLogin() {
   playgroundMode = true;
   loadingEl.classList.add("hidden");
   appEl.classList.remove("hidden");
-  playgroundBanner.classList.remove("hidden");
   // Show anonymous profile with placeholder avatar
   document.getElementById("user-email").textContent = "Anonymous";
   const avatar = document.getElementById("user-avatar");
   avatar.src = "https://www.gravatar.com/avatar/?s=48&d=mp";
   avatar.classList.remove("hidden");
   logoutBtn.classList.add("hidden");
-  loginBtn.classList.add("hidden");
+  loginBtn.classList.remove("hidden");
 
   // Load playground bookmarks (persisted locally or use samples)
   const saved = loadPlaygroundBookmarks();
@@ -98,7 +94,6 @@ async function showApp(alreadyRenderedCache) {
   playgroundMode = false;
   loadingEl.classList.add("hidden");
   appEl.classList.remove("hidden");
-  playgroundBanner.classList.add("hidden");
   loginBtn.classList.add("hidden");
   clearPlaygroundBookmarks();
   if (editMode) exitEditMode();
@@ -441,6 +436,7 @@ function renderList(items, prefix, parentArray) {
         btn.classList.toggle("open", open);
         btn.textContent = open ? "v" : ">";
         btn.setAttribute("aria-label", open ? "collapse" : "expand");
+        syncToggleAllBtn();
       });
     } else if (item.url && !editMode) {
       // Wire link — whole row navigates (view mode only)
@@ -660,12 +656,51 @@ const importExportBtn = document.getElementById("import-export-btn");
 const importExportPanel = document.getElementById("import-export-panel");
 const importExportText = document.getElementById("import-export-text");
 const importBtn = document.getElementById("import-btn");
+const yamlStatus = document.getElementById("yaml-status");
 let currentFormat = "yaml";
+
+const SAMPLE_YAML = `- name: Example Folder
+  children:
+    - name: Example Link
+      url: https://example.com
+    - name: Another Link
+      url: https://example.org
+`;
+
+function validateYaml() {
+  const text = importExportText.value.trim();
+  if (!text) {
+    yamlStatus.textContent = "";
+    yamlStatus.className = "";
+    importBtn.disabled = true;
+    return;
+  }
+  try {
+    const parsed = deserializeBookmarks(text, currentFormat);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      yamlStatus.textContent = "invalid yaml";
+      yamlStatus.className = "invalid";
+      importBtn.disabled = true;
+    } else {
+      yamlStatus.textContent = "valid yaml";
+      yamlStatus.className = "valid";
+      importBtn.disabled = false;
+    }
+  } catch {
+    yamlStatus.textContent = "invalid yaml";
+    yamlStatus.className = "invalid";
+    importBtn.disabled = true;
+  }
+}
+
+importExportText.addEventListener("input", validateYaml);
 
 importExportBtn.addEventListener("click", () => {
   const opening = importExportPanel.classList.toggle("hidden") === false;
   if (opening) {
-    importExportText.value = serializeBookmarks(currentBookmarks, currentFormat);
+    const yaml = serializeBookmarks(currentBookmarks, currentFormat);
+    importExportText.value = yaml.trim() ? yaml : SAMPLE_YAML;
+    validateYaml();
   }
 });
 
@@ -795,6 +830,11 @@ function yamlToBookmarks(text) {
 const toggleAllBtn = document.getElementById("toggle-all");
 let allExpanded = true;
 
+function syncToggleAllBtn() {
+  const anyOpen = document.querySelectorAll(".children.open").length > 0;
+  toggleAllBtn.textContent = anyOpen ? "-" : "+";
+}
+
 toggleAllBtn.addEventListener("click", () => {
   const anyOpen = document.querySelectorAll(".children.open").length > 0;
   if (anyOpen) {
@@ -839,17 +879,11 @@ userBtn.addEventListener("click", (e) => {
     logoutBtn.classList.toggle("hidden");
     loginBtn.classList.add("hidden");
   } else {
-    loginBtn.classList.toggle("hidden");
-    logoutBtn.classList.add("hidden");
+    login();
   }
 });
 
 loginBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  login();
-});
-
-playgroundLoginBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   login();
 });
@@ -861,5 +895,4 @@ logoutBtn.addEventListener("click", (e) => {
 
 document.addEventListener("click", () => {
   logoutBtn.classList.add("hidden");
-  loginBtn.classList.add("hidden");
 });

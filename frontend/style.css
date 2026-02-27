@@ -172,41 +172,6 @@ body {
   font-size: 0.8em;
 }
 
-/* ── Playground banner ───────────────────────── */
-
-#playground-banner {
-  max-width: 720px;
-  margin-bottom: 12px;
-  padding: 6px 12px;
-  background: #2a2a3e;
-  border: 1px dashed #585b70;
-  border-radius: 4px;
-  font-size: 0.8em;
-  color: #a6adc8;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-#playground-login-btn {
-  background: none;
-  color: #89b4fa;
-  border: 1px solid #89b4fa;
-  border-radius: 4px;
-  padding: 2px 10px;
-  font-family: inherit;
-  font-size: 1em;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
-}
-
-#playground-login-btn:hover {
-  background: #89b4fa;
-  color: #1e1e2e;
-}
-
 /* ── Hidden utility ──────────────────────────── */
 
 .hidden {
@@ -266,8 +231,13 @@ body {
   transition: color 0.15s;
 }
 
-#user-btn:hover {
+#user-info:hover #user-btn {
   color: #cdd6f4;
+}
+
+#user-info:hover #login-btn {
+  color: #89b4fa;
+  border-color: #89b4fa;
 }
 
 #user-avatar {
@@ -482,6 +452,20 @@ body {
 #import-export-text:focus {
   outline: none;
   border-color: #89b4fa;
+}
+
+#yaml-status {
+  font-size: 0.75em;
+  padding: 3px 0;
+  min-height: 1.4em;
+}
+
+#yaml-status.valid {
+  color: #a6e3a1;
+}
+
+#yaml-status.invalid {
+  color: #f38ba8;
 }
 
 #import-btn {
