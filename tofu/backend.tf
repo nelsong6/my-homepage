@@ -119,7 +119,25 @@ resource "azurerm_dns_cname_record" "homepage_api" {
   record              = azurerm_container_app.homepage_api["homepage-api"].ingress[0].fqdn
 }
 
-# 3a. Azure Managed Certificate (via azapi — azurerm doesn't support this resource type)
+# 3a. Register the custom domain on the container app (no cert yet — Azure
+#     requires the hostname to exist before a managed certificate can be issued).
+resource "azurerm_container_app_custom_domain" "homepage_api" {
+  name                     = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
+  container_app_id         = azurerm_container_app.homepage_api["homepage-api"].id
+  certificate_binding_type = "Disabled"
+
+  # The cert binding is applied in step 3c via azapi — ignore drift here.
+  lifecycle {
+    ignore_changes = [certificate_binding_type, container_app_environment_certificate_id]
+  }
+
+  depends_on = [
+    azurerm_dns_txt_record.homepage_api_verification,
+    azurerm_dns_cname_record.homepage_api
+  ]
+}
+
+# 3b. Azure Managed Certificate (via azapi — azurerm doesn't support this resource type)
 resource "azapi_resource" "homepage_api_managed_cert" {
   type      = "Microsoft.App/ManagedEnvironments/managedCertificates@2024-03-01"
   name      = "homepage-api-cert"
@@ -134,21 +152,33 @@ resource "azapi_resource" "homepage_api_managed_cert" {
   }
 
   depends_on = [
-    azurerm_dns_txt_record.homepage_api_verification,
-    azurerm_dns_cname_record.homepage_api
+    azurerm_container_app_custom_domain.homepage_api
   ]
 }
 
-# 3b. The Custom Domain with Managed Certificate binding
-resource "azurerm_container_app_custom_domain" "homepage_api" {
-  name                                             = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
-  container_app_id                                 = azurerm_container_app.homepage_api["homepage-api"].id
-  container_app_environment_certificate_id = azapi_resource.homepage_api_managed_cert.id
-  certificate_binding_type                         = "SniEnabled"
+# 3c. Bind the managed certificate to the custom domain (PATCH the container app)
+resource "azapi_update_resource" "homepage_api_cert_binding" {
+  type        = "Microsoft.App/containerApps@2024-03-01"
+  resource_id = azurerm_container_app.homepage_api["homepage-api"].id
+
+  body = {
+    properties = {
+      configuration = {
+        ingress = {
+          customDomains = [
+            {
+              name          = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
+              certificateId = azapi_resource.homepage_api_managed_cert.id
+              bindingType   = "SniEnabled"
+            }
+          ]
+        }
+      }
+    }
+  }
 
   depends_on = [
-    azurerm_dns_txt_record.homepage_api_verification,
-    azurerm_dns_cname_record.homepage_api
+    azapi_resource.homepage_api_managed_cert
   ]
 }
 
