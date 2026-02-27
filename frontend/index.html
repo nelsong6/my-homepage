@@ -7,26 +7,27 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Login screen -->
-  <div id="login-screen" class="hidden">
-    <div class="login-box">
-      <h1>Home</h1>
-      <button id="login-btn">Log In</button>
-    </div>
+  <!-- User profile (always visible) -->
+  <div id="user-info">
+    <button id="user-btn">
+      <img id="user-avatar" class="hidden" alt="" />
+      <span id="user-email">Anonymous</span>
+    </button>
+    <button id="login-btn" class="hidden">Log in</button>
+    <button id="logout-btn" class="hidden">Log out</button>
   </div>
 
   <!-- Loading state -->
   <div id="loading" class="hidden">Loading…</div>
 
+  <!-- Playground banner (shown when not authenticated) -->
+  <div id="playground-banner" class="hidden">
+    <span>Playground — your changes won't be saved.</span>
+    <button id="playground-login-btn">Log in</button>
+  </div>
+
   <!-- Main app (hidden until authenticated) -->
   <div id="app" class="hidden">
-    <div id="user-info">
-      <button id="user-btn">
-        <img id="user-avatar" class="hidden" alt="" />
-        <span id="user-email"></span>
-      </button>
-      <button id="logout-btn" class="hidden">Log out</button>
-    </div>
     <div id="toolbar">
       <button id="toggle-all">+</button>
       <button id="more-btn">...</button>

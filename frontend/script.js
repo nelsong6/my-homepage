@@ -2,9 +2,10 @@ import { CONFIG } from './config.js';
 import { initAuth, login, logout, getToken, isAuthenticated, getUser } from './auth.js';
 
 // ── DOM references ──────────────────────────────────────────────
-const loginScreen = document.getElementById("login-screen");
 const loadingEl = document.getElementById("loading");
 const appEl = document.getElementById("app");
+const loginBtn = document.getElementById("login-btn");
+const logoutBtn = document.getElementById("logout-btn");
 const tree = document.getElementById("tree");
 const editBtn = document.getElementById("edit-btn");
 const saveBtn = document.getElementById("save-btn");
@@ -13,11 +14,35 @@ const moreBtn = document.getElementById("more-btn");
 const apiError = document.getElementById("api-error");
 
 const CACHE_KEY = "cached_bookmarks";
+const PLAYGROUND_KEY = "playground_bookmarks";
 
 // ── Edit mode state ─────────────────────────────────────────────
 let editMode = false;
 let editBookmarks = null;   // deep clone used during editing
 let currentBookmarks = [];  // last-fetched/rendered bookmarks
+let userAuthenticated = false;
+let playgroundMode = false;
+
+const playgroundBanner = document.getElementById("playground-banner");
+const playgroundLoginBtn = document.getElementById("playground-login-btn");
+
+const SAMPLE_BOOKMARKS = [
+  {
+    name: "Getting Started",
+    children: [
+      { name: "Add your own bookmarks" },
+      { name: "Organize into folders" },
+      { name: "Log in to save permanently" },
+    ],
+  },
+  {
+    name: "Example Links",
+    children: [
+      { name: "Wikipedia", url: "https://en.wikipedia.org" },
+      { name: "Hacker News", url: "https://news.ycombinator.com" },
+    ],
+  },
+];
 
 // ── App entry point ─────────────────────────────────────────────
 
@@ -26,14 +51,12 @@ let currentBookmarks = [];  // last-fetched/rendered bookmarks
 
   // If we have cached data, paint immediately — no waiting for Auth0.
   if (cached) {
-    loginScreen.classList.add("hidden");
     loadingEl.classList.add("hidden");
     appEl.classList.remove("hidden");
     currentBookmarks = cached;
     renderBookmarks(cached);
   } else {
     // No cache — show loading while Auth0 initializes
-    loginScreen.classList.add("hidden");
     loadingEl.classList.remove("hidden");
   }
 
@@ -42,9 +65,6 @@ let currentBookmarks = [];  // last-fetched/rendered bookmarks
 
   if (await isAuthenticated()) {
     await showApp(cached);
-  } else if (cached) {
-    // Had stale cache but session expired — fall back to login
-    showLogin();
   } else {
     showLogin();
   }
@@ -53,15 +73,35 @@ let currentBookmarks = [];  // last-fetched/rendered bookmarks
 // ── Auth flows ──────────────────────────────────────────────────
 
 function showLogin() {
+  userAuthenticated = false;
+  playgroundMode = true;
   loadingEl.classList.add("hidden");
-  appEl.classList.add("hidden");
-  loginScreen.classList.remove("hidden");
+  appEl.classList.remove("hidden");
+  playgroundBanner.classList.remove("hidden");
+  // Show anonymous profile with placeholder avatar
+  document.getElementById("user-email").textContent = "Anonymous";
+  const avatar = document.getElementById("user-avatar");
+  avatar.src = "https://www.gravatar.com/avatar/?s=48&d=mp";
+  avatar.classList.remove("hidden");
+  logoutBtn.classList.add("hidden");
+  loginBtn.classList.add("hidden");
+
+  // Load playground bookmarks (persisted locally or use samples)
+  const saved = loadPlaygroundBookmarks();
+  currentBookmarks = saved || deepClone(SAMPLE_BOOKMARKS);
+  savePlaygroundBookmarks(currentBookmarks);
+  renderBookmarks(currentBookmarks);
 }
 
 async function showApp(alreadyRenderedCache) {
+  userAuthenticated = true;
+  playgroundMode = false;
   loadingEl.classList.add("hidden");
-  loginScreen.classList.add("hidden");
   appEl.classList.remove("hidden");
+  playgroundBanner.classList.add("hidden");
+  loginBtn.classList.add("hidden");
+  clearPlaygroundBookmarks();
+  if (editMode) exitEditMode();
 
   // Show user info + gravatar
   const user = await getUser();
@@ -118,6 +158,29 @@ function saveCachedBookmarks(bookmarks) {
 
 function bookmarksEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// ── Playground localStorage helpers ──────────────────────────────
+
+function loadPlaygroundBookmarks() {
+  try {
+    const raw = localStorage.getItem(PLAYGROUND_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePlaygroundBookmarks(bookmarks) {
+  try {
+    localStorage.setItem(PLAYGROUND_KEY, JSON.stringify(bookmarks));
+  } catch { /* non-critical */ }
+}
+
+function clearPlaygroundBookmarks() {
+  try { localStorage.removeItem(PLAYGROUND_KEY); } catch { /* non-critical */ }
 }
 
 // ── API ─────────────────────────────────────────────────────────
@@ -536,6 +599,14 @@ async function saveEdits() {
   // Clean up the bookmarks: remove empty items, trim, strip empty children arrays
   const cleaned = cleanBookmarks(editBookmarks);
 
+  if (playgroundMode) {
+    savePlaygroundBookmarks(cleaned);
+    currentBookmarks = cleaned;
+    exitEditMode();
+    renderBookmarks(currentBookmarks);
+    return;
+  }
+
   try {
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving…";
@@ -760,14 +831,27 @@ editBtn.addEventListener("click", enterEditMode);
 saveBtn.addEventListener("click", saveEdits);
 cancelBtn.addEventListener("click", cancelEdits);
 
-document.getElementById("login-btn").addEventListener("click", login);
-
 const userBtn = document.getElementById("user-btn");
-const logoutBtn = document.getElementById("logout-btn");
 
 userBtn.addEventListener("click", (e) => {
   e.stopPropagation();
-  logoutBtn.classList.toggle("hidden");
+  if (userAuthenticated) {
+    logoutBtn.classList.toggle("hidden");
+    loginBtn.classList.add("hidden");
+  } else {
+    loginBtn.classList.toggle("hidden");
+    logoutBtn.classList.add("hidden");
+  }
+});
+
+loginBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  login();
+});
+
+playgroundLoginBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  login();
 });
 
 logoutBtn.addEventListener("click", (e) => {
@@ -777,4 +861,5 @@ logoutBtn.addEventListener("click", (e) => {
 
 document.addEventListener("click", () => {
   logoutBtn.classList.add("hidden");
+  loginBtn.classList.add("hidden");
 });

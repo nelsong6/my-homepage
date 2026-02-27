@@ -31,17 +31,6 @@ resource "azurerm_static_web_app_custom_domain" "homepage" {
   depends_on        = [azurerm_dns_cname_record.homepage]
 }
 
-resource "azapi_update_resource" "homepage_default_domain" {
-  type        = "Microsoft.Web/staticSites/customDomains@2024-04-01"
-  resource_id = azurerm_static_web_app_custom_domain.homepage.id
-
-  body = {
-    properties = {
-      isDefault = true
-    }
-  }
-}
-
 # ============================================================================
 # Auth0 Social Connection Links
 # ============================================================================
@@ -84,17 +73,20 @@ resource "auth0_client" "frontend_spa" {
   callbacks = [
     "http://localhost:3000",
     "http://localhost:5500",
-    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}"
+    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}",
+    "https://${azurerm_static_web_app.homepage.default_host_name}"
   ]
   allowed_logout_urls = [
     "http://localhost:3000",
     "http://localhost:5500",
-    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}"
+    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}",
+    "https://${azurerm_static_web_app.homepage.default_host_name}"
   ]
   web_origins = [
     "http://localhost:3000",
     "http://localhost:5500",
-    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}"
+    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}",
+    "https://${azurerm_static_web_app.homepage.default_host_name}"
   ]
   jwt_configuration {
     alg = "RS256"
