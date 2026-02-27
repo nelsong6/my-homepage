@@ -58,6 +58,11 @@ resource "auth0_connection_clients" "google_spa" {
   enabled_clients = [auth0_client.frontend_spa.id]
 }
 
+import {
+  to = auth0_connection_clients.google_spa
+  id = "con_kZUpzua9TliVC2QK"
+}
+
 resource "auth0_connection_clients" "apple_spa" {
   connection_id   = local.infra.auth0_connection_apple_id
   enabled_clients = [auth0_client.frontend_spa.id]
