@@ -119,6 +119,11 @@ resource "azurerm_dns_cname_record" "homepage_api" {
   record              = azurerm_container_app.homepage_api["homepage-api"].ingress[0].fqdn
 }
 
+import {
+  to = azurerm_container_app_custom_domain.homepage_api
+  id = "/subscriptions/aee0cbd2-8074-4001-b610-0f8edb4eaa3c/resourceGroups/homepage-rg/providers/Microsoft.App/containerApps/homepage-api/customDomainName/homepage.api.romaine.life"
+}
+
 # 3. The Custom Domain with Azure Managed Certificate
 resource "azurerm_container_app_custom_domain" "homepage_api" {
   name                     = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
