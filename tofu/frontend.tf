@@ -78,7 +78,7 @@ resource "auth0_connection_clients" "microsoft_spa" {
 # ============================================================================
 
 resource "auth0_client" "frontend_spa" {
-  name           = "My Homepage Web UI"
+  name           = "homepage.romaine.life"
   app_type       = "spa"
   is_first_party = true
   callbacks = [
