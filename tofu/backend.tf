@@ -119,11 +119,32 @@ resource "azurerm_dns_cname_record" "homepage_api" {
   record              = azurerm_container_app.homepage_api["homepage-api"].ingress[0].fqdn
 }
 
-# 3. The Custom Domain binding
+# 3a. Azure Managed Certificate (via azapi — azurerm doesn't support this resource type)
+resource "azapi_resource" "homepage_api_managed_cert" {
+  type      = "Microsoft.App/ManagedEnvironments/managedCertificates@2024-03-01"
+  name      = "homepage-api-cert"
+  parent_id = local.infra.container_app_environment_id
+  location  = var.location
+
+  body = {
+    properties = {
+      subjectName             = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
+      domainControlValidation = "CNAME"
+    }
+  }
+
+  depends_on = [
+    azurerm_dns_txt_record.homepage_api_verification,
+    azurerm_dns_cname_record.homepage_api
+  ]
+}
+
+# 3b. The Custom Domain with Managed Certificate binding
 resource "azurerm_container_app_custom_domain" "homepage_api" {
-  name                     = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
-  container_app_id         = azurerm_container_app.homepage_api["homepage-api"].id
-  certificate_binding_type = "Disabled"
+  name                                             = "${local.back_app_dns_name}.${local.infra.dns_zone_name}"
+  container_app_id                                 = azurerm_container_app.homepage_api["homepage-api"].id
+  container_app_environment_managed_certificate_id = azapi_resource.homepage_api_managed_cert.id
+  certificate_binding_type                         = "SniEnabled"
 
   depends_on = [
     azurerm_dns_txt_record.homepage_api_verification,
