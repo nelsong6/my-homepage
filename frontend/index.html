@@ -21,16 +21,19 @@
   <!-- Main app (hidden until authenticated) -->
   <div id="app" class="hidden">
     <div id="user-info">
-      <img id="user-avatar" class="hidden" alt="" />
-      <span id="user-email"></span>
-      <button id="logout-btn">Log Out</button>
+      <button id="user-btn">
+        <img id="user-avatar" class="hidden" alt="" />
+        <span id="user-email"></span>
+      </button>
+      <button id="logout-btn" class="hidden">Log out</button>
     </div>
     <div id="toolbar">
       <button id="toggle-all">+</button>
-      <button id="edit-btn">Edit</button>
+      <button id="more-btn">...</button>
+      <button id="edit-btn" class="hidden">Edit</button>
       <button id="save-btn" class="hidden">Save</button>
       <button id="cancel-btn" class="hidden">Cancel</button>
-      <button id="import-export-btn">Import/Export</button>
+      <button id="import-export-btn" class="hidden">Import/Export</button>
     </div>
     <div id="import-export-panel" class="hidden">
       <textarea id="import-export-text" rows="14" spellcheck="false"></textarea>

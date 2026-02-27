@@ -9,6 +9,7 @@ const tree = document.getElementById("tree");
 const editBtn = document.getElementById("edit-btn");
 const saveBtn = document.getElementById("save-btn");
 const cancelBtn = document.getElementById("cancel-btn");
+const moreBtn = document.getElementById("more-btn");
 
 const CACHE_KEY = "cached_bookmarks";
 
@@ -509,7 +510,10 @@ function reRenderEdit() {
 function enterEditMode() {
   editMode = true;
   editBookmarks = deepClone(currentBookmarks);
+  moreBtn.classList.add("hidden");
   editBtn.classList.add("hidden");
+  importExportBtn.classList.add("hidden");
+  importExportPanel.classList.add("hidden");
   saveBtn.classList.remove("hidden");
   cancelBtn.classList.remove("hidden");
   reRenderEdit();
@@ -544,7 +548,9 @@ function exitEditMode() {
   editMode = false;
   editBookmarks = null;
   tree.classList.remove("edit-mode");
-  editBtn.classList.remove("hidden");
+  moreBtn.classList.remove("hidden");
+  editBtn.classList.add("hidden");
+  importExportBtn.classList.add("hidden");
   saveBtn.classList.add("hidden");
   cancelBtn.classList.add("hidden");
   saveBtn.disabled = false;
@@ -726,9 +732,36 @@ toggleAllBtn.addEventListener("click", () => {
   }
 });
 
+moreBtn.addEventListener("click", () => {
+  const showing = editBtn.classList.toggle("hidden");
+  // showing is true if we just added "hidden" (i.e. collapsing)
+  if (showing) {
+    importExportBtn.classList.add("hidden");
+    importExportPanel.classList.add("hidden");
+  } else {
+    importExportBtn.classList.remove("hidden");
+  }
+});
+
 editBtn.addEventListener("click", enterEditMode);
 saveBtn.addEventListener("click", saveEdits);
 cancelBtn.addEventListener("click", cancelEdits);
 
 document.getElementById("login-btn").addEventListener("click", login);
-document.getElementById("logout-btn").addEventListener("click", logout);
+
+const userBtn = document.getElementById("user-btn");
+const logoutBtn = document.getElementById("logout-btn");
+
+userBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  logoutBtn.classList.toggle("hidden");
+});
+
+logoutBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  logout();
+});
+
+document.addEventListener("click", () => {
+  logoutBtn.classList.add("hidden");
+});

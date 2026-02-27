@@ -17,7 +17,11 @@ export async function initAuth() {
   // Handle redirect callback
   const query = window.location.search;
   if (query.includes("code=") && query.includes("state=")) {
-    await auth0Client.handleRedirectCallback();
+    try {
+      await auth0Client.handleRedirectCallback();
+    } catch {
+      // Stale or invalid callback params — ignore and continue
+    }
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
