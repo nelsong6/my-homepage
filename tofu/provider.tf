@@ -1,11 +1,4 @@
-terraform {
-  required_providers {
-    azapi = {
-      source  = "azure/azapi"
-      version = "~> 2.0"
-    }
-  }
-}
+# required_providers is sourced at runtime using a hook in spacelift from infra-bootstrap.
 
 provider "azurerm" {
   features {}
