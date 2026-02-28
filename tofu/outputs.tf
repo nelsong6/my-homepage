@@ -39,29 +39,9 @@ output "container_app_name" {
   description = "Name of the backend Container App, picked up by github actions to handle custom dns for container app."
 }
 
-output "auth0_domain" {
-  value       = local.infra.auth0_domain
-  description = "Auth0 custom domain for login branding"
-}
-
-output "auth0_canonical_domain" {
-  value       = local.infra.auth0_canonical_domain
-  description = "Auth0 canonical tenant domain for firewall bypass"
-}
-
 output "container_app_default_fqdn" {
   value       = azurerm_container_app.homepage_api["homepage-api"].ingress[0].fqdn
   description = "Default Azure-assigned FQDN for the backend Container App"
-}
-
-output "auth0_client_id" {
-  value       = auth0_client.frontend_spa.client_id
-  description = "Auth0 SPA client ID for the frontend application"
-}
-
-output "auth0_audience" {
-  value       = auth0_resource_server.backend_api.identifier
-  description = "Auth0 API audience identifier for the backend"
 }
 
 output "app_config_prefix" {

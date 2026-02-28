@@ -5,6 +5,7 @@ import { initAuth, login, logout, getToken, isAuthenticated, getUser } from './a
 const loadingEl = document.getElementById("loading");
 const appEl = document.getElementById("app");
 const loginBtn = document.getElementById("login-btn");
+const loginPicker = document.getElementById("login-picker");
 const logoutBtn = document.getElementById("logout-btn");
 const tree = document.getElementById("tree");
 const editBtn = document.getElementById("edit-btn");
@@ -46,21 +47,20 @@ const SAMPLE_BOOKMARKS = [
 (async function main() {
   const cached = loadCachedBookmarks();
 
-  // If we have cached data, paint immediately — no waiting for Auth0.
+  // If we have cached data, paint immediately.
   if (cached) {
     loadingEl.classList.add("hidden");
     appEl.classList.remove("hidden");
     currentBookmarks = cached;
     renderBookmarks(cached);
   } else {
-    // No cache — show loading while Auth0 initializes
     loadingEl.classList.remove("hidden");
   }
 
-  // Auth0 init happens in the background while cached UI is already visible.
-  await initAuth();
+  // Synchronous — picks up #token= from URL fragment if present.
+  initAuth();
 
-  if (await isAuthenticated()) {
+  if (isAuthenticated()) {
     await showApp(cached);
   } else {
     showLogin();
@@ -82,6 +82,12 @@ function showLogin() {
   logoutBtn.classList.add("hidden");
   loginBtn.classList.remove("hidden");
 
+  // Hide Apple button on bypass URL (auth.romaine.life unreachable from R1)
+  if (CONFIG.isBypass) {
+    const appleBtn = document.getElementById("apple-login-btn");
+    if (appleBtn) appleBtn.classList.add("hidden");
+  }
+
   // Load playground bookmarks (persisted locally or use samples)
   const saved = loadPlaygroundBookmarks();
   currentBookmarks = saved || deepClone(SAMPLE_BOOKMARKS);
@@ -95,13 +101,14 @@ async function showApp(alreadyRenderedCache) {
   loadingEl.classList.add("hidden");
   appEl.classList.remove("hidden");
   loginBtn.classList.add("hidden");
+  loginPicker.classList.add("hidden");
   clearPlaygroundBookmarks();
   if (editMode) exitEditMode();
 
-  // Show user info + gravatar
-  const user = await getUser();
-  const email = user.email || "";
-  document.getElementById("user-email").textContent = email || user.name || "";
+  // Show user info
+  const user = getUser();
+  const email = user?.email || "";
+  document.getElementById("user-email").textContent = email || user?.name || "";
   if (email) {
     const hash = await sha256(email.trim().toLowerCase());
     const avatar = document.getElementById("user-avatar");
@@ -182,7 +189,7 @@ function clearPlaygroundBookmarks() {
 
 async function fetchBookmarks() {
   try {
-    const token = await getToken();
+    const token = getToken();
     const res = await fetch(`${CONFIG.apiUrl}/api/bookmarks`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -201,7 +208,7 @@ async function fetchBookmarks() {
 }
 
 async function putBookmarks(bookmarks) {
-  const token = await getToken();
+  const token = getToken();
   const res = await fetch(`${CONFIG.apiUrl}/api/bookmarks`, {
     method: "PUT",
     headers: {
@@ -502,8 +509,6 @@ function startInlineEdit(row, item, parentArray) {
     } else {
       delete item.url;
     }
-    // If item had children and now has a URL, keep both (it's a folder-link)
-    // If item had no children and no URL, it becomes a folder
     reRenderEdit();
   }
 
@@ -533,11 +538,8 @@ function addNode(parentArray, index) {
   parentArray.splice(index, 0, newItem);
   reRenderEdit();
 
-  // Find the newly added row and open inline edit on it
-  // We need a small delay for the DOM to update
   requestAnimationFrame(() => {
     const nodes = tree.querySelectorAll(".node");
-    // Find the node with "New bookmark" text that was just added
     for (const node of nodes) {
       const label = node.querySelector(".node-label");
       if (label && label.textContent.includes("New bookmark")) {
@@ -568,7 +570,6 @@ function moveNode(parentArray, index, direction) {
 function reRenderEdit() {
   tree.classList.add("edit-mode");
   renderBookmarks(editBookmarks);
-  // Expand all in edit mode for visibility
   tree.querySelectorAll(".children").forEach((c) => c.classList.add("open"));
   tree.querySelectorAll(".node-toggle").forEach((btn) => {
     btn.classList.add("open");
@@ -592,7 +593,6 @@ function enterEditMode() {
 }
 
 async function saveEdits() {
-  // Clean up the bookmarks: remove empty items, trim, strip empty children arrays
   const cleaned = cleanBookmarks(editBookmarks);
 
   if (playgroundMode) {
@@ -790,7 +790,6 @@ function yamlToBookmarks(text) {
       const item = { name: nameMatch[2].trim() };
       pos++;
 
-      // Parse properties at baseIndent + 2
       const propIndent = baseIndent + 2;
       while (pos < lines.length) {
         const propLine = lines[pos];
@@ -798,7 +797,7 @@ function yamlToBookmarks(text) {
         if (pi !== propIndent) break;
         const trimmed = propLine.trim();
 
-        if (trimmed.startsWith("- ")) break; // next sibling list item
+        if (trimmed.startsWith("- ")) break;
 
         const urlMatch = trimmed.match(/^url:\s*(.+)/);
         if (urlMatch) {
@@ -813,7 +812,6 @@ function yamlToBookmarks(text) {
           continue;
         }
 
-        // Unknown property, skip
         pos++;
       }
 
@@ -828,7 +826,6 @@ function yamlToBookmarks(text) {
 // ── Toolbar ─────────────────────────────────────────────────────
 
 const toggleAllBtn = document.getElementById("toggle-all");
-let allExpanded = true;
 
 function syncToggleAllBtn() {
   const anyOpen = document.querySelectorAll(".children.open").length > 0;
@@ -858,7 +855,6 @@ toggleAllBtn.addEventListener("click", () => {
 
 moreBtn.addEventListener("click", () => {
   const showing = editBtn.classList.toggle("hidden");
-  // showing is true if we just added "hidden" (i.e. collapsing)
   if (showing) {
     importExportBtn.classList.add("hidden");
     importExportPanel.classList.add("hidden");
@@ -878,14 +874,22 @@ userBtn.addEventListener("click", (e) => {
   if (userAuthenticated) {
     logoutBtn.classList.toggle("hidden");
     loginBtn.classList.add("hidden");
+    loginPicker.classList.add("hidden");
   } else {
-    login();
+    loginPicker.classList.toggle("hidden");
   }
 });
 
 loginBtn.addEventListener("click", (e) => {
   e.stopPropagation();
-  login();
+  loginPicker.classList.toggle("hidden");
+});
+
+document.querySelectorAll(".login-provider").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    login(btn.dataset.provider);
+  });
 });
 
 logoutBtn.addEventListener("click", (e) => {
@@ -895,4 +899,5 @@ logoutBtn.addEventListener("click", (e) => {
 
 document.addEventListener("click", () => {
   logoutBtn.classList.add("hidden");
+  loginPicker.classList.add("hidden");
 });

@@ -208,6 +208,30 @@ body {
   border-color: #89b4fa;
 }
 
+/* ── Provider picker (login dropdown) ──────── */
+
+#login-picker {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.login-provider {
+  background: none;
+  color: #585b70;
+  border: 1px solid #45475a;
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-family: inherit;
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.login-provider:hover {
+  color: #89b4fa;
+  border-color: #89b4fa;
+}
+
 /* ── User info / logout ──────────────────────── */
 
 #user-info {

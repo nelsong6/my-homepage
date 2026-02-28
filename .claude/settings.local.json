@@ -4,7 +4,20 @@
       "Bash(netstat:*)",
       "Bash(tasklist:*)",
       "Bash(xargs:*)",
-      "Bash(Select-String -Pattern \"image|IMAGE_NAME|containerapp update\")"
+      "Bash(Select-String -Pattern \"image|IMAGE_NAME|containerapp update\")",
+      "Read(//d/Repositories/kill-me/backend/middleware/**)",
+      "Read(//d/Repositories/kill-me/backend/**)",
+      "Read(//d/Repositories/kill-me/tofu/**)",
+      "Bash(ConvertFrom-Json)",
+      "Bash(Select-Object -ExpandProperty login)",
+      "Read(//c/Users/upstairspc/AppData/Local/Google/Cloud SDK/google-cloud-sdk/bin/**)",
+      "Bash(gcloud iam workload-identity-pools providers update-oidc:*)",
+      "Bash(gcloud.cmd iam workload-identity-pools providers update-oidc:*)",
+      "Bash(powershell.exe -Command \"gcloud iam workload-identity-pools providers update-oidc spacelift-oidc --workload-identity-pool=spacelift-pool --location=global --issuer-uri=''https://nelsong6.app.us.spacelift.io'' --project=balmy-runner-487022-p9\")",
+      "Bash(powershell.exe:*)"
+    ],
+    "additionalDirectories": [
+      "D:\\Repositories\\infra-bootstrap\\bootstrap"
     ]
   }
 }

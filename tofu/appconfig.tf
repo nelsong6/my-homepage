@@ -5,26 +5,26 @@
 # backend/startup/appConfig.js. The Container App's managed identity has the
 # "App Configuration Data Reader" role assigned in backend.tf.
 
+resource "azurerm_app_configuration_key" "cosmos_db_endpoint" {
+  configuration_store_id = local.infra.azure_app_config_resource_id
+  key                    = "${local.front_app_dns_name}/cosmos_db_endpoint"
+  value                  = "https://${local.infra.cosmos_db_account_name}.documents.azure.com:443/"
+}
+
+resource "azurerm_app_configuration_key" "auth0_apple_client_id" {
+  configuration_store_id = local.infra.azure_app_config_resource_id
+  key                    = "${local.front_app_dns_name}/AUTH0_APPLE_CLIENT_ID"
+  value                  = auth0_client.backend_apple.client_id
+}
+
+resource "azurerm_app_configuration_key" "auth0_apple_client_secret" {
+  configuration_store_id = local.infra.azure_app_config_resource_id
+  key                    = "${local.front_app_dns_name}/AUTH0_APPLE_CLIENT_SECRET"
+  value                  = auth0_client.backend_apple.client_secret
+}
+
 resource "azurerm_app_configuration_key" "auth0_domain" {
   configuration_store_id = local.infra.azure_app_config_resource_id
   key                    = "${local.front_app_dns_name}/AUTH0_DOMAIN"
   value                  = local.infra.auth0_domain
-}
-
-resource "azurerm_app_configuration_key" "auth0_audience" {
-  configuration_store_id = local.infra.azure_app_config_resource_id
-  key                    = "${local.front_app_dns_name}/AUTH0_AUDIENCE"
-  value                  = auth0_resource_server.backend_api.identifier
-}
-
-resource "azurerm_app_configuration_key" "auth0_client_id" {
-  configuration_store_id = local.infra.azure_app_config_resource_id
-  key                    = "${local.front_app_dns_name}/AUTH0_CLIENT_ID"
-  value                  = auth0_client.frontend_spa.client_id
-}
-
-resource "azurerm_app_configuration_key" "auth0_canonical_domain" {
-  configuration_store_id = local.infra.azure_app_config_resource_id
-  key                    = "${local.front_app_dns_name}/AUTH0_CANONICAL_DOMAIN"
-  value                  = local.infra.auth0_canonical_domain
 }

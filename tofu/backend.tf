@@ -41,6 +41,11 @@ resource "azurerm_container_app" "homepage_api" {
         name  = "APP_CONFIG_PREFIX"
         value = local.front_app_dns_name
       }
+
+      env {
+        name  = "KEY_VAULT_URL"
+        value = "https://${var.key_vault_name}.vault.azure.net"
+      }
     }
 
     min_replicas = 0 # Scale to zero when not in use
@@ -182,15 +187,9 @@ resource "azapi_update_resource" "homepage_api_cert_binding" {
   ]
 }
 
-# 4. The Auth0 Resource Server
-resource "auth0_resource_server" "backend_api" {
-  name        = "My Homepage Backend API"
-  identifier  = "https://${local.back_app_dns_name}.${local.infra.dns_zone_name}"
-  signing_alg = "RS256"
-
-  # Allows the frontend to request refresh tokens so users stay logged in
-  allow_offline_access = true
-
-  # Prevents the consent prompt since you own both the frontend and backend.
-  skip_consent_for_verifiable_first_party_clients = true
+# Grant Container App managed identity read access to Key Vault secrets
+resource "azurerm_role_assignment" "container_app_keyvault_reader" {
+  scope                = data.azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_container_app.homepage_api["homepage-api"].identity[0].principal_id
 }

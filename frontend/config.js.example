@@ -1,8 +1,6 @@
 const _isBypass = window.location.hostname.includes("azurestaticapps.net");
 
 export const CONFIG = {
-  auth0Domain: _isBypass ? "<AUTH0_CANONICAL_DOMAIN>" : "<AUTH0_DOMAIN>",
-  auth0ClientId: "<AUTH0_CLIENT_ID>",
-  auth0Audience: "<AUTH0_AUDIENCE>",
   apiUrl: _isBypass ? "https://<CONTAINER_APP_FQDN>" : "http://localhost:3000",
+  isBypass: _isBypass,
 };

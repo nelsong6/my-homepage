@@ -1,4 +1,4 @@
-const CACHE_NAME = "app-shell-v2";
+const CACHE_NAME = "app-shell-v3";
 const SHELL_ASSETS = [
   "/",
   "/index.html",
@@ -30,20 +30,17 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: cache-first for same-origin, network-only for API/CDN ─
+// ── Fetch: network-first for same-origin, skip API/cross-origin ─
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // Skip non-GET requests
   if (event.request.method !== "GET") return;
 
-  // Skip API calls — let the app handle those with its own caching
-  if (url.pathname.startsWith("/api/")) return;
+  // Skip API and auth calls
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) return;
 
-  // Skip Auth0 callback redirects so the auth SDK can process them
-  if (url.searchParams.has("code") && url.searchParams.has("state")) return;
-
-  // Skip cross-origin requests (Auth0 CDN, etc.)
+  // Skip cross-origin requests
   if (url.origin !== self.location.origin) return;
 
   // Network-first: try network, fall back to cache for offline support

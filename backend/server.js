@@ -3,28 +3,54 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import passport from 'passport';
 import { CosmosClient } from '@azure/cosmos';
 import { DefaultAzureCredential } from '@azure/identity';
 import { createRequireAuth } from './middleware/auth.js';
 import { fetchAppConfig } from './startup/appConfig.js';
+import { configurePassport } from './auth/passport-setup.js';
+import { createAuthRoutes } from './auth/routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware that does NOT depend on async config — safe to register now
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 app.use(morgan('combined'));
+app.use(passport.initialize());
 
 async function startServer() {
-  // Step 1: Fetch AUTH0_DOMAIN and AUTH0_AUDIENCE from Azure App Configuration.
-  const { auth0Domain, auth0CanonicalDomain, auth0Audience, cosmosDbEndpoint } = await fetchAppConfig();
+  // Step 1: Fetch all config (App Configuration + Key Vault).
+  const config = await fetchAppConfig();
 
-  // Step 2: Build the Auth0 JWT middleware now that we have the values.
-  const requireAuth = createRequireAuth({ auth0Domain, auth0CanonicalDomain, auth0Audience });
+  // Step 2: Configure passport strategies with OAuth credentials.
+  configurePassport(config);
 
-  // Step 3: Initialize Cosmos DB client.
+  // Step 3: Build the JWT auth middleware.
+  const requireAuth = createRequireAuth({ jwtSecret: config.jwtSigningSecret });
+
+  // Step 4: Mount auth routes (login/callback/me).
+  const allowedRedirectUris = [
+    'https://homepage.romaine.life',
+    'http://localhost:3000',
+    'http://localhost:5500',
+  ];
+  // Dynamically add the Azure SWA default hostname if available
+  // (it's an azurestaticapps.net URL — unknown at code-time)
+
+  app.use('/auth', createAuthRoutes({
+    jwtSecret: config.jwtSigningSecret,
+    allowedRedirectUris,
+  }));
+
+  // Step 5: Initialize Cosmos DB client.
   const DATABASE_NAME = process.env.COSMOS_DB_DATABASE_NAME || 'HomepageDB';
   const CONTAINER_NAME = process.env.COSMOS_DB_CONTAINER_NAME || 'userdata';
 
@@ -32,7 +58,7 @@ async function startServer() {
   try {
     const credential = new DefaultAzureCredential();
     const client = new CosmosClient({
-      endpoint: cosmosDbEndpoint,
+      endpoint: config.cosmosDbEndpoint,
       aadCredentials: credential
     });
 
@@ -44,7 +70,7 @@ async function startServer() {
     process.exit(1);
   }
 
-  // Step 4: Register all routes.
+  // Step 6: Register all routes.
 
   // Health check endpoint
   app.get('/health', (req, res) => {
@@ -61,7 +87,7 @@ async function startServer() {
     try {
       const credential = new DefaultAzureCredential();
       const client = new CosmosClient({
-        endpoint: cosmosDbEndpoint,
+        endpoint: config.cosmosDbEndpoint,
         aadCredentials: credential
       });
 
@@ -79,7 +105,7 @@ async function startServer() {
       });
 
       // Optionally seed bookmarks for the current user
-      const userId = req.auth.payload.sub;
+      const userId = req.user.sub;
       let seeded = false;
 
       if (req.body.bookmarks) {
@@ -114,7 +140,7 @@ async function startServer() {
   // Get bookmarks for the authenticated user
   app.get('/api/bookmarks', requireAuth, async (req, res) => {
     try {
-      const userId = req.auth.payload.sub;
+      const userId = req.user.sub;
 
       const querySpec = {
         query: 'SELECT * FROM c WHERE c.type = @type AND c.userId = @userId',
@@ -140,7 +166,7 @@ async function startServer() {
   // Save/update bookmarks for the authenticated user
   app.put('/api/bookmarks', requireAuth, async (req, res) => {
     try {
-      const userId = req.auth.payload.sub;
+      const userId = req.user.sub;
       const { bookmarks } = req.body;
 
       if (!Array.isArray(bookmarks)) {
@@ -182,7 +208,6 @@ async function startServer() {
 
   console.log(`Database: ${DATABASE_NAME}`);
   console.log(`Container: ${CONTAINER_NAME}`);
-  console.log(`Auth0 domain: ${auth0Domain}`);
   console.log('Server ready');
 }
 

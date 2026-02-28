@@ -32,68 +32,23 @@ resource "azurerm_static_web_app_custom_domain" "homepage" {
 }
 
 # ============================================================================
-# Auth0 Social Connection Links
+# Auth0 — Apple Sign-In only (server-side via Regular Web App)
 # ============================================================================
-# Link tenant-level social connections (from infra-bootstrap) to this SPA.
-# This makes the login buttons appear on the Universal Login page.
+# GitHub, Google, and Microsoft are handled by passport.js directly.
+# Auth0 is retained solely for Apple Sign-In (avoids $99/year Apple Developer fee).
 
-resource "auth0_connection_clients" "github_spa" {
-  connection_id   = local.infra.auth0_connection_github_id
-  enabled_clients = [auth0_client.frontend_spa.id]
-}
-
-resource "auth0_connection_clients" "google_spa" {
-  connection_id   = local.infra.auth0_connection_google_id
-  enabled_clients = [auth0_client.frontend_spa.id]
-}
-
-import {
-  to = auth0_connection_clients.google_spa
-  id = "con_kZUpzua9TliVC2QK"
-}
-
-resource "auth0_connection_clients" "apple_spa" {
-  connection_id   = local.infra.auth0_connection_apple_id
-  enabled_clients = [auth0_client.frontend_spa.id]
-}
-
-resource "auth0_connection_clients" "microsoft_spa" {
-  connection_id   = local.infra.auth0_connection_microsoft_id
-  enabled_clients = [auth0_client.frontend_spa.id]
-}
-
-# ============================================================================
-# Auth0 Frontend SPA Client
-# ============================================================================
-
-resource "auth0_client" "frontend_spa" {
-  name           = "homepage.romaine.life"
-  app_type       = "spa"
+resource "auth0_client" "backend_apple" {
+  name           = "homepage-backend-apple"
+  app_type       = "regular_web"
   is_first_party = true
   callbacks = [
-    "http://localhost:3000",
-    "http://localhost:5500",
-    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}",
-    "https://${azurerm_static_web_app.homepage.default_host_name}"
+    "https://${local.back_app_dns_name}.${local.infra.dns_zone_name}/auth/apple/callback",
+    "http://localhost:3000/auth/apple/callback"
   ]
-  allowed_logout_urls = [
-    "http://localhost:3000",
-    "http://localhost:5500",
-    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}",
-    "https://${azurerm_static_web_app.homepage.default_host_name}"
-  ]
-  web_origins = [
-    "http://localhost:3000",
-    "http://localhost:5500",
-    "https://${local.front_app_dns_name}.${local.infra.dns_zone_name}",
-    "https://${azurerm_static_web_app.homepage.default_host_name}"
-  ]
-  jwt_configuration {
-    alg = "RS256"
-  }
-  grant_types = [
-    "authorization_code",
-    "implicit",
-    "refresh_token"
-  ]
+  grant_types = ["authorization_code"]
+}
+
+resource "auth0_connection_clients" "apple_backend" {
+  connection_id   = local.infra.auth0_connection_apple_id
+  enabled_clients = [auth0_client.backend_apple.id]
 }

@@ -44,45 +44,21 @@ variable "infra_auth0_domain" {
   type        = string
 }
 
-variable "infra_auth0_canonical_domain" {
-  description = "Auth0 canonical tenant domain for firewall bypass"
-  type        = string
-}
-
-variable "infra_auth0_connection_github_id" {
-  description = "Auth0 GitHub connection ID"
-  type        = string
-}
-
-variable "infra_auth0_connection_google_id" {
-  description = "Auth0 Google connection ID"
-  type        = string
-}
-
 variable "infra_auth0_connection_apple_id" {
   description = "Auth0 Apple connection ID"
   type        = string
 }
 
-variable "infra_auth0_connection_microsoft_id" {
-  description = "Auth0 Microsoft connection ID"
-  type        = string
-}
-
 locals {
   infra = {
-    resource_group_name            = var.infra_resource_group_name
-    dns_zone_name                  = var.infra_dns_zone_name
-    container_app_environment_id   = var.infra_container_app_environment_id
-    cosmos_db_account_name         = var.infra_cosmos_db_account_name
-    cosmos_db_account_id           = var.infra_cosmos_db_account_id
-    azure_app_config_endpoint      = var.infra_azure_app_config_endpoint
-    azure_app_config_resource_id   = var.infra_azure_app_config_resource_id
-    auth0_domain                   = var.infra_auth0_domain
-    auth0_canonical_domain         = var.infra_auth0_canonical_domain
-    auth0_connection_github_id     = var.infra_auth0_connection_github_id
-    auth0_connection_google_id     = var.infra_auth0_connection_google_id
-    auth0_connection_apple_id      = var.infra_auth0_connection_apple_id
-    auth0_connection_microsoft_id  = var.infra_auth0_connection_microsoft_id
+    resource_group_name          = var.infra_resource_group_name
+    dns_zone_name                = var.infra_dns_zone_name
+    container_app_environment_id = var.infra_container_app_environment_id
+    cosmos_db_account_name       = var.infra_cosmos_db_account_name
+    cosmos_db_account_id         = var.infra_cosmos_db_account_id
+    azure_app_config_endpoint    = var.infra_azure_app_config_endpoint
+    azure_app_config_resource_id = var.infra_azure_app_config_resource_id
+    auth0_domain                 = var.infra_auth0_domain
+    auth0_connection_apple_id    = var.infra_auth0_connection_apple_id
   }
 }

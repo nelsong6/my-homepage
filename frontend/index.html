@@ -13,6 +13,12 @@
       <img id="user-avatar" class="hidden" alt="" />
       <span id="user-email">Anonymous</span>
     </button>
+    <div id="login-picker" class="hidden">
+      <button class="login-provider" data-provider="github">GitHub</button>
+      <button class="login-provider" data-provider="google">Google</button>
+      <button class="login-provider" data-provider="microsoft">Microsoft</button>
+      <button class="login-provider" data-provider="apple" id="apple-login-btn">Apple</button>
+    </div>
     <button id="login-btn" class="hidden">Log in</button>
     <button id="logout-btn" class="hidden">Log out</button>
   </div>
@@ -38,8 +44,6 @@
     <div id="api-error" class="hidden"></div>
     <div id="tree"></div>
   </div>
-
-  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
 
   <script type="module" src="script.js"></script>
 
