@@ -42,8 +42,9 @@ async function startServer() {
     'http://localhost:3000',
     'http://localhost:5500',
   ];
-  // Dynamically add the Azure SWA default hostname if available
-  // (it's an azurestaticapps.net URL — unknown at code-time)
+  if (process.env.SWA_DEFAULT_HOSTNAME) {
+    allowedRedirectUris.push(`https://${process.env.SWA_DEFAULT_HOSTNAME}`);
+  }
 
   app.use('/auth', createAuthRoutes({
     jwtSecret: config.jwtSigningSecret,

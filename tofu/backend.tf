@@ -46,6 +46,11 @@ resource "azurerm_container_app" "homepage_api" {
         name  = "KEY_VAULT_URL"
         value = "https://${var.key_vault_name}.vault.azure.net"
       }
+
+      env {
+        name  = "SWA_DEFAULT_HOSTNAME"
+        value = azurerm_static_web_app.homepage.default_host_name
+      }
     }
 
     min_replicas = 0 # Scale to zero when not in use
