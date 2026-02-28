@@ -20,7 +20,7 @@ resource "azurerm_app_configuration_key" "auth0_apple_client_id" {
 resource "azurerm_app_configuration_key" "auth0_apple_client_secret" {
   configuration_store_id = local.infra.azure_app_config_resource_id
   key                    = "${local.front_app_dns_name}/AUTH0_APPLE_CLIENT_SECRET"
-  value                  = auth0_client.backend_apple.client_secret
+  value                  = auth0_client_credentials.backend_apple.client_secret
 }
 
 resource "azurerm_app_configuration_key" "auth0_domain" {

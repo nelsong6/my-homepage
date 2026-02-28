@@ -48,6 +48,11 @@ resource "auth0_client" "backend_apple" {
   grant_types = ["authorization_code"]
 }
 
+resource "auth0_client_credentials" "backend_apple" {
+  client_id             = auth0_client.backend_apple.id
+  authentication_method = "client_secret_post"
+}
+
 resource "auth0_connection_clients" "apple_backend" {
   connection_id   = local.infra.auth0_connection_apple_id
   enabled_clients = [auth0_client.backend_apple.id]
